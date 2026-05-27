@@ -262,10 +262,13 @@ div[data-testid="stDataFrame"] [role="gridcell"] {
 }
 
 .qm-dashboard-hero,
+.qm-page-hero,
 .qm-prize-hero,
 .qm-dashboard-card,
 .qm-rule-card,
-.qm-podium-card {
+.qm-podium-card,
+.qm-info-card,
+.qm-empty-state {
     background: var(--qm-panel-strong);
     border: 1px solid rgba(220, 229, 236, 0.95);
     border-radius: 8px;
@@ -286,6 +289,14 @@ div[data-testid="stDataFrame"] [role="gridcell"] {
     align-items: stretch;
 }
 
+.qm-page-hero {
+    min-height: 10rem;
+    padding: 1rem;
+    background:
+        linear-gradient(135deg, rgba(7, 21, 38, 0.94), rgba(11, 93, 69, 0.92)),
+        #071526;
+}
+
 .qm-dashboard-hero::after {
     content: "";
     position: absolute;
@@ -295,7 +306,8 @@ div[data-testid="stDataFrame"] [role="gridcell"] {
     border-radius: 50%;
 }
 
-.qm-dashboard-hero h1 {
+.qm-dashboard-hero h1,
+.qm-page-hero h1 {
     color: #ffffff;
     font-size: clamp(1.9rem, 2.8vw, 2.75rem);
     line-height: 0.98;
@@ -400,7 +412,8 @@ div[data-testid="stDataFrame"] [role="gridcell"] {
 
 .qm-dashboard-card,
 .qm-rule-card,
-.qm-podium-card {
+.qm-podium-card,
+.qm-info-card {
     min-height: 6.4rem;
     padding: 0.85rem;
     border-top: 4px solid var(--qm-green-2);
@@ -458,6 +471,115 @@ div[data-testid="stDataFrame"] [role="gridcell"] {
     margin-top: 0.65rem;
 }
 
+.qm-section-header {
+    margin: 1.4rem 0 0.7rem;
+}
+
+.qm-section-header h2 {
+    margin: 0;
+}
+
+.qm-section-eyebrow {
+    color: var(--qm-gold);
+    font-size: 0.72rem;
+    font-weight: 850;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.qm-section-subtitle {
+    color: var(--qm-muted);
+    font-size: 0.95rem;
+    font-weight: 650;
+    margin: 0.25rem 0 0;
+}
+
+.qm-info-card {
+    align-items: flex-start;
+    display: flex;
+    gap: 0.75rem;
+    min-height: auto;
+}
+
+.qm-info-icon {
+    font-size: 1.25rem;
+    line-height: 1;
+    margin-top: 0.1rem;
+}
+
+.qm-info-title {
+    color: var(--qm-navy);
+    font-size: 1rem;
+    font-weight: 900;
+    line-height: 1.2;
+}
+
+.qm-info-body {
+    color: var(--qm-muted);
+    font-size: 0.92rem;
+    font-weight: 650;
+    line-height: 1.35;
+    margin-top: 0.25rem;
+}
+
+.qm-empty-state {
+    padding: 1.25rem;
+    text-align: center;
+}
+
+.qm-empty-icon {
+    font-size: 1.7rem;
+    line-height: 1;
+    margin-bottom: 0.55rem;
+}
+
+.qm-empty-title {
+    color: var(--qm-navy);
+    font-size: 1.08rem;
+    font-weight: 900;
+}
+
+.qm-empty-message {
+    color: var(--qm-muted);
+    font-size: 0.94rem;
+    font-weight: 650;
+    margin: 0.35rem auto 0;
+    max-width: 36rem;
+}
+
+.qm-status-pill {
+    border: 1px solid rgba(15, 122, 88, 0.24);
+    border-radius: 999px;
+    color: var(--qm-green);
+    display: inline-flex;
+    font-size: 0.78rem;
+    font-weight: 850;
+    line-height: 1;
+    padding: 0.38rem 0.62rem;
+}
+
+.qm-status-pill.qm-accent-gold {
+    background: rgba(214, 165, 51, 0.12);
+    border-color: rgba(214, 165, 51, 0.32);
+    color: #8a6415;
+}
+
+.qm-status-pill.qm-accent-green {
+    background: rgba(15, 122, 88, 0.11);
+}
+
+.qm-status-pill.qm-accent-navy {
+    background: rgba(12, 33, 55, 0.09);
+    border-color: rgba(12, 33, 55, 0.22);
+    color: var(--qm-navy-2);
+}
+
+.qm-status-pill.qm-accent-red {
+    background: rgba(185, 28, 28, 0.10);
+    border-color: rgba(185, 28, 28, 0.22);
+    color: var(--qm-red);
+}
+
 .qm-accent-gold {
     border-top-color: var(--qm-gold);
 }
@@ -499,6 +621,7 @@ hr {
     }
 
     .qm-dashboard-hero,
+    .qm-page-hero,
     .qm-prize-hero {
         min-height: auto;
         padding: 1.1rem;
@@ -515,7 +638,8 @@ hr {
 
     .qm-dashboard-card,
     .qm-rule-card,
-    .qm-podium-card {
+    .qm-podium-card,
+    .qm-info-card {
         min-height: auto;
     }
 }
