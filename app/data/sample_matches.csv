@@ -1,0 +1,6 @@
+match_id,stage,group,match_date,home_team,away_team,stadium,city,status
+M001,Group Stage,A,2026-06-11 20:00,Equipo A1,Equipo A2,Stadium TBD,City TBD,OPEN
+M002,Group Stage,A,2026-06-12 18:00,Equipo A3,Equipo A4,Stadium TBD,City TBD,OPEN
+M003,Group Stage,B,2026-06-13 18:00,Equipo B1,Equipo B2,Stadium TBD,City TBD,OPEN
+M004,Group Stage,B,2026-06-14 20:00,Equipo B3,Equipo B4,Stadium TBD,City TBD,OPEN
+M005,Round of 32,,2026-06-28 18:00,Por definir,Por definir,Stadium TBD,City TBD,OPEN

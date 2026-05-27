@@ -1,0 +1,1669 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Quiniela Mundial 2026 - Preview</title>
+    <style>
+      :root {
+        --bg: #f4f7f5;
+        --panel: #ffffff;
+        --panel-soft: #eef7f4;
+        --text: #14213d;
+        --muted: #627084;
+        --line: #dfe5ea;
+        --brand: #087f5b;
+        --brand-dark: #07503f;
+        --brand-soft: #dff5ec;
+        --accent: #c1121f;
+        --gold: #d49a18;
+        --gold-soft: #fff4cf;
+        --navy: #081f2b;
+        --shadow: 0 16px 36px rgba(20, 33, 61, 0.09);
+        --radius: 8px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        color: var(--text);
+        background:
+          linear-gradient(115deg, rgba(8, 127, 91, 0.12), transparent 30%),
+          linear-gradient(35deg, rgba(193, 18, 31, 0.07), transparent 34%),
+          repeating-linear-gradient(90deg, rgba(8, 127, 91, 0.035) 0 2px, transparent 2px 82px),
+          linear-gradient(180deg, #ffffff 0, var(--bg) 330px);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+      }
+
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+
+      .shell {
+        display: grid;
+        grid-template-columns: 260px minmax(0, 1fr);
+        min-height: 100vh;
+      }
+
+      .sidebar {
+        position: sticky;
+        overflow: hidden;
+        top: 0;
+        height: 100vh;
+        padding: 20px;
+        background:
+          linear-gradient(155deg, rgba(193, 18, 31, 0.30), transparent 31%),
+          linear-gradient(25deg, rgba(8, 127, 91, 0.55), transparent 52%),
+          linear-gradient(180deg, #1f1020 0%, #082836 46%, #062d2c 100%);
+        color: #ffffff;
+      }
+
+      .sidebar::after {
+        content: "⚽ 🏆";
+        position: absolute;
+        right: -18px;
+        bottom: 22px;
+        color: rgba(255, 255, 255, 0.07);
+        font-size: 76px;
+        font-weight: 900;
+        letter-spacing: 0;
+        pointer-events: none;
+      }
+
+      .brand {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        padding-bottom: 22px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      }
+
+      .brand-mark {
+        display: grid;
+        place-items: center;
+        width: 48px;
+        height: 48px;
+        border-radius: 16px;
+        background:
+          radial-gradient(circle at 28% 28%, rgba(255, 255, 255, 0.86), transparent 24%),
+          conic-gradient(from 20deg, #087f5b, #f8fafc, #c1121f, #d49a18, #087f5b);
+        box-shadow:
+          inset 0 0 0 3px rgba(255, 255, 255, 0.28),
+          0 14px 28px rgba(0, 0, 0, 0.22);
+      }
+
+      .brand-mark::before {
+        content: "🏆";
+        font-size: 24px;
+        filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.24));
+      }
+
+      .brand h1 {
+        margin: 0;
+        font-family: "Trebuchet MS", Inter, ui-sans-serif, system-ui, sans-serif;
+        font-size: 21px;
+        font-weight: 950;
+        line-height: 1.1;
+        letter-spacing: 0;
+        text-shadow: 0 2px 12px rgba(0, 0, 0, 0.26);
+      }
+
+      .brand span {
+        display: block;
+        margin-top: 4px;
+        color: rgba(255, 255, 255, 0.74);
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .profile {
+        position: relative;
+        z-index: 1;
+        margin: 18px 0 20px;
+        padding: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.13);
+        border-radius: var(--radius);
+        background: rgba(255, 255, 255, 0.055);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      }
+
+      .profile strong {
+        display: block;
+      }
+
+      .profile-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        font-weight: 800;
+      }
+
+      .profile-title span {
+        color: rgba(255, 255, 255, 0.74);
+        font-size: 12px;
+      }
+
+      .profile-title strong {
+        font-size: 13px;
+      }
+
+      .entry-select {
+        width: 100%;
+        margin-top: 9px;
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        border-radius: var(--radius);
+        padding: 10px 12px;
+        color: #ffffff;
+        background: rgba(18, 56, 74, 0.92);
+      }
+
+      .nav {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        gap: 7px;
+      }
+
+      .nav button {
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        width: 100%;
+        border: 0;
+        border-radius: var(--radius);
+        padding: 12px;
+        color: rgba(255, 255, 255, 0.80);
+        background: transparent;
+        text-align: left;
+        font-weight: 760;
+        cursor: pointer;
+      }
+
+      .nav button::after {
+        content: attr(data-watermark);
+        position: absolute;
+        right: 10px;
+        color: rgba(255, 255, 255, 0.08);
+        font-size: 28px;
+        pointer-events: none;
+      }
+
+      .nav-icon {
+        display: inline-grid;
+        place-items: center;
+        width: 26px;
+        height: 26px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.10);
+        font-size: 15px;
+      }
+
+      .nav button:hover,
+      .nav button.active {
+        color: #ffffff;
+        background: rgba(255, 255, 255, 0.14);
+        box-shadow: inset 3px 0 0 var(--gold);
+      }
+
+      .content {
+        padding: 28px;
+      }
+
+      .topbar {
+        display: flex;
+        gap: 16px;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 22px;
+      }
+
+      .eyebrow {
+        margin: 0 0 6px;
+        color: var(--brand);
+        font-weight: 850;
+        font-size: 13px;
+      }
+
+      h2 {
+        margin: 0;
+        font-size: 30px;
+        font-weight: 950;
+        letter-spacing: 0;
+      }
+
+      .topbar p {
+        margin: 7px 0 0;
+        color: var(--muted);
+      }
+
+      .status-pill {
+        min-width: 164px;
+        border: 1px solid rgba(8, 127, 91, 0.18);
+        border-radius: 999px;
+        padding: 9px 13px;
+        color: var(--brand-dark);
+        background:
+          linear-gradient(90deg, rgba(255, 255, 255, 0.72), rgba(223, 245, 236, 0.95)),
+          var(--brand-soft);
+        font-weight: 700;
+        text-align: center;
+        box-shadow: 0 12px 28px rgba(8, 127, 91, 0.10);
+      }
+
+      .world-hero {
+        position: relative;
+        overflow: hidden;
+        display: grid;
+        grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
+        gap: 22px;
+        border: 1px solid rgba(15, 118, 110, 0.14);
+        border-radius: 14px;
+        padding: 24px;
+        color: #ffffff;
+        background:
+          linear-gradient(135deg, rgba(8, 31, 43, 0.97), rgba(8, 127, 91, 0.94)),
+          repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.06) 0 1px, transparent 1px 70px);
+        box-shadow: 0 24px 60px rgba(8, 31, 43, 0.20);
+      }
+
+      .world-hero::after {
+        content: "⚽";
+        position: absolute;
+        right: 22px;
+        bottom: -18px;
+        font-size: 124px;
+        opacity: 0.12;
+      }
+
+      .hero-copy {
+        position: relative;
+        z-index: 1;
+      }
+
+      .hero-copy h3 {
+        margin: 0;
+        max-width: 760px;
+        font-size: 30px;
+        line-height: 1.1;
+        text-shadow: 0 2px 14px rgba(0, 0, 0, 0.20);
+      }
+
+      .hero-copy p {
+        max-width: 720px;
+        margin: 10px 0 0;
+        color: rgba(255, 255, 255, 0.76);
+      }
+
+      .hero-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 18px;
+      }
+
+      .hero-badge {
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        border-radius: 999px;
+        padding: 8px 11px;
+        color: #ffffff;
+        background: rgba(255, 255, 255, 0.12);
+        font-size: 13px;
+        font-weight: 800;
+      }
+
+      .pool-card {
+        position: relative;
+        z-index: 1;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 12px;
+        padding: 16px;
+        background:
+          linear-gradient(135deg, rgba(255, 255, 255, 0.16), rgba(255, 244, 207, 0.10)),
+          rgba(255, 255, 255, 0.12);
+      }
+
+      .pool-card span {
+        display: block;
+        color: rgba(255, 255, 255, 0.72);
+        font-size: 13px;
+      }
+
+      .pool-card strong {
+        display: block;
+        margin-top: 6px;
+        font-size: 38px;
+        color: #fff4cf;
+      }
+
+      .pool-card small {
+        display: block;
+        margin-top: 10px;
+        color: rgba(255, 255, 255, 0.78);
+      }
+
+      .dashboard-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(320px, 0.46fr);
+        gap: 16px;
+        margin-top: 16px;
+      }
+
+      .rules-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .rule-tile,
+      .mini-stat,
+      .prize-card {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--panel);
+        box-shadow: var(--shadow);
+      }
+
+      .rule-tile,
+      .mini-stat,
+      .metric,
+      .card {
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.92)),
+          var(--panel);
+      }
+
+      .rule-tile {
+        padding: 16px;
+      }
+
+      .rule-tile .icon {
+        display: inline-grid;
+        place-items: center;
+        width: 38px;
+        height: 38px;
+        margin-bottom: 12px;
+        border-radius: 50%;
+        background:
+          linear-gradient(135deg, var(--brand-soft), var(--gold-soft));
+        font-size: 20px;
+      }
+
+      .rule-tile strong {
+        display: block;
+        margin-bottom: 5px;
+        font-size: 18px;
+      }
+
+      .rule-tile span {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .mini-stats {
+        display: grid;
+        gap: 12px;
+        margin-top: 16px;
+      }
+
+      .stat-row {
+        display: grid;
+        gap: 12px;
+      }
+
+      .stat-row.primary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .stat-row.phase {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .mini-stat {
+        padding: 14px;
+      }
+
+      .mini-stat span {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+
+      .mini-stat strong {
+        display: block;
+        margin-top: 7px;
+        font-size: 25px;
+      }
+
+      .mini-stat small {
+        display: block;
+        margin-top: 4px;
+        color: var(--brand-dark);
+        font-weight: 800;
+      }
+
+      .prize-stack {
+        display: grid;
+        gap: 10px;
+      }
+
+      .prize-card {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 12px;
+        align-items: center;
+        padding: 14px;
+      }
+
+      .prize-icon {
+        display: grid;
+        place-items: center;
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        background: var(--gold-soft);
+        font-size: 22px;
+      }
+
+      .prize-card strong {
+        display: block;
+      }
+
+      .prize-card span {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .prize-card b {
+        font-size: 20px;
+      }
+
+      .ranking-card {
+        margin-top: 16px;
+      }
+
+      .ranking-note {
+        margin: -4px 0 14px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .leader-row {
+        background: linear-gradient(90deg, rgba(255, 243, 205, 0.76), transparent);
+      }
+
+      .medal {
+        font-size: 24px;
+      }
+
+      .screen {
+        display: none;
+      }
+
+      .screen.active {
+        display: block;
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+      }
+
+      .metrics {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .metric,
+      .card {
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--panel);
+        box-shadow: var(--shadow);
+      }
+
+      .metric {
+        padding: 16px;
+      }
+
+      .metric span {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .metric strong {
+        display: block;
+        margin-top: 8px;
+        font-size: 26px;
+      }
+
+      .metric small {
+        display: block;
+        margin-top: 5px;
+        color: var(--brand);
+        font-weight: 700;
+      }
+
+      .card {
+        padding: 18px;
+      }
+
+      .card h3 {
+        margin: 0 0 14px;
+        font-size: 18px;
+      }
+
+      .two-col {
+        grid-template-columns: 1.4fr 0.9fr;
+        align-items: start;
+        margin-top: 16px;
+      }
+
+      .three-col {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        border-bottom: 1px solid var(--line);
+        padding: 12px 10px;
+        text-align: left;
+      }
+
+      th {
+        color: var(--muted);
+        font-size: 12px;
+        text-transform: uppercase;
+      }
+
+      tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .rank {
+        width: 34px;
+        height: 34px;
+        display: inline-grid;
+        place-items: center;
+        border-radius: 50%;
+        color: #ffffff;
+        background: var(--brand);
+        font-weight: 800;
+      }
+
+      .rank.gold {
+        background: linear-gradient(135deg, #f6c453, var(--gold));
+      }
+
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 5px 9px;
+        color: var(--brand-dark);
+        background: var(--brand-soft);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .tag.red {
+        color: #8f1420;
+        background: #ffe7e7;
+      }
+
+      .tag.gray {
+        color: #4b5563;
+        background: #eef1f4;
+      }
+
+      .prediction-header {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 16px;
+        align-items: center;
+        margin-bottom: 14px;
+      }
+
+      .prediction-header h3 {
+        margin: 0;
+        font-size: 28px;
+      }
+
+      .prediction-header p {
+        margin: 6px 0 0;
+        color: var(--muted);
+      }
+
+      .progress-pill {
+        min-width: 190px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 10px 14px;
+        background: #ffffff;
+        box-shadow: var(--shadow);
+        font-weight: 800;
+        text-align: center;
+      }
+
+      .filter-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        margin: 14px 0;
+      }
+
+      .filter-pill {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 8px 12px;
+        color: var(--text);
+        background: #ffffff;
+        font-weight: 800;
+      }
+
+      .filter-pill.active {
+        color: #ffffff;
+        border-color: var(--brand);
+        background: var(--brand);
+      }
+
+      .lock-banner {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 18px;
+        border: 1px solid rgba(15, 118, 110, 0.18);
+        border-radius: var(--radius);
+        padding: 12px 14px;
+        color: var(--brand-dark);
+        background: var(--brand-soft);
+        font-weight: 800;
+      }
+
+      .date-section {
+        margin-top: 20px;
+      }
+
+      .date-section h4 {
+        margin: 0 0 12px;
+        font-size: 20px;
+      }
+
+      .prediction-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(280px, 1fr));
+        gap: 12px;
+      }
+
+      .match-card {
+        border: 1px solid #d5dbea;
+        border-radius: 12px;
+        background: #ffffff;
+        box-shadow: 0 10px 24px rgba(20, 33, 61, 0.06);
+      }
+
+      .match-head {
+        display: flex;
+        gap: 12px;
+        justify-content: space-between;
+        align-items: center;
+        padding: 13px 14px 8px;
+      }
+
+      .match-head strong {
+        display: block;
+        font-size: 17px;
+      }
+
+      .match-time {
+        font-size: 22px;
+        font-weight: 900;
+      }
+
+      .match-body {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        gap: 12px;
+        align-items: center;
+        padding: 10px 14px 16px;
+      }
+
+      .team {
+        min-width: 0;
+        text-align: center;
+      }
+
+      .flag {
+        display: inline-grid;
+        place-items: center;
+        width: 54px;
+        height: 42px;
+        border: 1px solid #d5dbea;
+        border-radius: 10px;
+        background: #ffffff;
+        font-size: 30px;
+      }
+
+      .team span:last-child {
+        display: block;
+        margin-top: 8px;
+        color: #2f3342;
+        font-weight: 700;
+        line-height: 1.1;
+      }
+
+      .score-capture {
+        display: grid;
+        grid-template-columns: 58px auto 58px;
+        gap: 8px;
+        align-items: center;
+        font-weight: 900;
+      }
+
+      .score-box {
+        height: 52px;
+        border: 2px solid #969abd;
+        border-radius: 14px;
+        display: grid;
+        place-items: center;
+        font-size: 24px;
+        font-weight: 900;
+      }
+
+      .winner-row {
+        display: grid;
+        grid-template-columns: auto minmax(180px, 1fr);
+        gap: 12px;
+        align-items: center;
+        padding: 0 14px 14px;
+      }
+
+      .winner-row span {
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 800;
+      }
+
+      .saved-prediction {
+        border-top: 1px solid var(--line);
+        display: grid;
+        grid-template-columns: 1fr auto auto;
+        gap: 12px;
+        align-items: center;
+        padding: 12px 14px;
+      }
+
+      .saved-prediction strong {
+        font-size: 20px;
+      }
+
+      .edit-button {
+        border: 0;
+        border-radius: 999px;
+        padding: 10px 16px;
+        color: #ffffff;
+        background: linear-gradient(135deg, var(--accent), #8f1420);
+        font-weight: 900;
+      }
+
+      .match-card.locked {
+        background: #f8fafc;
+      }
+
+      .summary-table {
+        margin-top: 16px;
+      }
+
+      select,
+      input {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 10px 11px;
+        color: var(--text);
+        background: #ffffff;
+      }
+
+      .primary {
+        border: 0;
+        border-radius: var(--radius);
+        padding: 10px 14px;
+        color: #ffffff;
+        background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+        font-weight: 800;
+        cursor: pointer;
+        box-shadow: 0 10px 18px rgba(8, 127, 91, 0.16);
+      }
+
+      .primary:hover {
+        background: var(--brand-dark);
+      }
+
+      .secondary {
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 10px 14px;
+        color: var(--text);
+        background: #ffffff;
+        font-weight: 800;
+        cursor: pointer;
+      }
+
+      .entry-card {
+        display: flex;
+        width: 100%;
+        gap: 14px;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: #ffffff;
+        color: var(--text);
+        cursor: pointer;
+        font: inherit;
+        text-align: left;
+      }
+
+      .entry-card.selected {
+        border-color: rgba(15, 118, 110, 0.55);
+        background: var(--panel-soft);
+      }
+
+      .entry-card strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      .entry-card span {
+        color: var(--muted);
+      }
+
+      .entry-points {
+        display: grid;
+        justify-items: end;
+        gap: 6px;
+        min-width: 112px;
+      }
+
+      .entry-points b {
+        color: var(--brand-dark);
+        font-size: 22px;
+        line-height: 1;
+      }
+
+      .admin-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .admin-form {
+        display: grid;
+        gap: 10px;
+      }
+
+      .login-panel {
+        max-width: 480px;
+        margin: 46px auto 0;
+      }
+
+      .login-panel .card {
+        padding: 24px;
+      }
+
+      .footer-note {
+        margin-top: 16px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      @media (max-width: 920px) {
+        .shell {
+          grid-template-columns: 1fr;
+        }
+
+        .sidebar {
+          position: static;
+          height: auto;
+        }
+
+        .nav {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .nav button {
+          text-align: center;
+        }
+
+        .content {
+          padding: 18px;
+        }
+
+        .topbar {
+          display: block;
+        }
+
+        .status-pill {
+          display: inline-block;
+          margin-top: 14px;
+        }
+
+        .metrics,
+        .two-col,
+        .three-col,
+        .admin-grid,
+        .world-hero,
+        .dashboard-grid,
+        .rules-grid,
+        .mini-stats,
+        .stat-row.primary,
+        .stat-row.phase {
+          grid-template-columns: 1fr;
+        }
+
+        .prediction-header,
+        .prediction-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 560px) {
+        .nav {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        h2 {
+          font-size: 24px;
+        }
+
+        .metric strong {
+          font-size: 22px;
+        }
+
+        .match-head,
+        .entry-card {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        .match-body {
+          grid-template-columns: 1fr;
+        }
+
+        .winner-row {
+          grid-template-columns: 1fr;
+        }
+
+        .score-capture {
+          justify-self: center;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true"></div>
+          <div>
+            <h1>Quiniela Mundial</h1>
+            <span>2026</span>
+          </div>
+        </div>
+
+        <div class="profile">
+          <div class="profile-title">
+            <strong>🎟️ Quiniela activa</strong>
+            <span>George</span>
+          </div>
+          <select id="sidebar-entry-select" class="entry-select" aria-label="Quiniela activa">
+            <option>George #1</option>
+            <option>George #2</option>
+          </select>
+        </div>
+
+        <nav class="nav" aria-label="Secciones">
+          <button class="active" data-screen="dashboard" data-watermark="🏆">
+            <span class="nav-icon">🏆</span><span>Dashboard</span>
+          </button>
+          <button data-screen="entries" data-watermark="🎟️">
+            <span class="nav-icon">🎟️</span><span>Mis quinielas</span>
+          </button>
+          <button data-screen="predictions" data-watermark="⚽">
+            <span class="nav-icon">⚽</span><span>Predicciones</span>
+          </button>
+          <button data-screen="stats" data-watermark="📊">
+            <span class="nav-icon">📊</span><span>Estadísticas</span>
+          </button>
+          <button data-screen="admin" data-watermark="🛡️">
+            <span class="nav-icon">🛡️</span><span>Admin</span>
+          </button>
+          <button data-screen="login" data-watermark="🔑">
+            <span class="nav-icon">🔑</span><span>Ingreso</span>
+          </button>
+        </nav>
+      </aside>
+
+      <main class="content">
+        <section class="topbar">
+          <div>
+            <p class="eyebrow">🏆 Quiniela Mundial 2026</p>
+            <h2 id="screen-title">Dashboard</h2>
+            <p id="screen-subtitle">Fase de grupos: reglas, bolsa acumulada, premios y posiciones.</p>
+          </div>
+          <div id="active-entry-pill" class="status-pill">⚽ Quiniela activa: George #1</div>
+        </section>
+
+        <section id="dashboard" class="screen active">
+          <article class="world-hero">
+            <div class="hero-copy">
+              <h3>🏆 Reglas Mundial 2026: fase de grupos.</h3>
+              <p>
+                Juega y vive la emoción mundialista. Esta quiniela cubre 72 partidos,
+                divididos en 12 grupos de 4 equipos.
+              </p>
+              <div class="hero-badges">
+                <span class="hero-badge">🌎 Fase de grupos</span>
+                <span class="hero-badge">📅 72 partidos</span>
+                <span class="hero-badge">⚽ Máximo 5 pts por partido</span>
+                <span class="hero-badge">🎯 Marcador exacto suma bono</span>
+                <span class="hero-badge">💵 $200 MXN por quiniela</span>
+              </div>
+            </div>
+            <div class="pool-card">
+              <span>Bolsa acumulada actual</span>
+              <strong>$7,600 MXN</strong>
+              <small>38 quinielas registradas · $200 MXN por quiniela.</small>
+            </div>
+          </article>
+
+          <div class="dashboard-grid">
+            <div>
+              <div class="rules-grid">
+                <article class="rule-tile">
+                  <span class="icon">✅</span>
+                  <strong>3 pts</strong>
+                  <span>Aciertas ganador, perdedor o empate.</span>
+                </article>
+                <article class="rule-tile">
+                  <span class="icon">🎯</span>
+                  <strong>+2 pts</strong>
+                  <span>Bono por marcador exacto.</span>
+                </article>
+                <article class="rule-tile">
+                  <span class="icon">🔥</span>
+                  <strong>5 pts</strong>
+                  <span>Máximo posible por partido.</span>
+                </article>
+                <article class="rule-tile">
+                  <span class="icon">❌</span>
+                  <strong>0 pts</strong>
+                  <span>Predicción incorrecta.</span>
+                </article>
+              </div>
+
+              <div class="mini-stats">
+                <div class="stat-row primary">
+                  <article class="mini-stat">
+                    <span>Usuarios</span>
+                    <strong>24</strong>
+                    <small>activos</small>
+                  </article>
+                  <article class="mini-stat">
+                    <span>Quinielas</span>
+                    <strong>38</strong>
+                    <small>registradas</small>
+                  </article>
+                </div>
+                <div class="stat-row phase">
+                  <article class="mini-stat">
+                    <span>Partidos</span>
+                    <strong>72</strong>
+                    <small>fase de grupos</small>
+                  </article>
+                  <article class="mini-stat">
+                    <span>Jugados</span>
+                    <strong>18</strong>
+                    <small>resultados oficiales</small>
+                  </article>
+                  <article class="mini-stat">
+                    <span>Faltan</span>
+                    <strong>54</strong>
+                    <small>por disputarse</small>
+                  </article>
+                </div>
+              </div>
+            </div>
+
+            <aside class="prize-stack" aria-label="Premiación">
+              <article class="prize-card">
+                <span class="prize-icon">🥇</span>
+                <div>
+                  <strong>1er lugar</strong>
+                  <span>60% de la bolsa</span>
+                </div>
+                <b>$4,560</b>
+              </article>
+              <article class="prize-card">
+                <span class="prize-icon">🥈</span>
+                <div>
+                  <strong>2do lugar</strong>
+                  <span>30% de la bolsa</span>
+                </div>
+                <b>$2,280</b>
+              </article>
+              <article class="prize-card">
+                <span class="prize-icon">🥉</span>
+                <div>
+                  <strong>3er lugar</strong>
+                  <span>10% de la bolsa</span>
+                </div>
+                <b>$760</b>
+              </article>
+            </aside>
+          </div>
+
+          <article class="card ranking-card">
+            <h3>🏁 Tabla general · Fase de grupos</h3>
+            <p class="ranking-note">La tabla real mostrará todas las quinielas registradas.</p>
+            <table>
+              <thead>
+                <tr>
+                  <th>Posición</th>
+                  <th>Quiniela</th>
+                  <th>Jugador</th>
+                  <th>Puntos</th>
+                  <th>Exactos</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="leader-row">
+                  <td><span class="medal">🏆</span></td>
+                  <td><strong>George #1</strong></td>
+                  <td>George</td>
+                  <td><strong>58</strong></td>
+                  <td>7</td>
+                </tr>
+                <tr>
+                  <td><span class="medal">🥈</span></td>
+                  <td><strong>Fer #2</strong></td>
+                  <td>Fer</td>
+                  <td><strong>55</strong></td>
+                  <td>6</td>
+                </tr>
+                <tr>
+                  <td><span class="medal">🥉</span></td>
+                  <td><strong>Clau #1</strong></td>
+                  <td>Clau</td>
+                  <td><strong>52</strong></td>
+                  <td>5</td>
+                </tr>
+                <tr>
+                  <td>4</td>
+                  <td>George #2</td>
+                  <td>George</td>
+                  <td>49</td>
+                  <td>4</td>
+                </tr>
+              </tbody>
+            </table>
+          </article>
+        </section>
+
+        <section id="entries" class="screen">
+          <div class="grid two-col">
+            <article class="card">
+              <h3>Tus quinielas</h3>
+              <div class="grid">
+                <button class="entry-card selected" data-entry-card data-entry-name="George #1">
+                  <div>
+                    <strong>George #1</strong>
+                    <span>Creada el 1 May 2026</span>
+                  </div>
+                  <div class="entry-points">
+                    <b>58 pts</b>
+                    <span class="tag" data-entry-status>Seleccionada</span>
+                  </div>
+                </button>
+                <button class="entry-card" data-entry-card data-entry-name="George #2">
+                  <div>
+                    <strong>George #2</strong>
+                    <span>Creada el 1 May 2026</span>
+                  </div>
+                  <div class="entry-points">
+                    <b>49 pts</b>
+                    <span class="tag gray" data-entry-status>Ver</span>
+                  </div>
+                </button>
+              </div>
+            </article>
+
+            <article class="card">
+              <h3>Crear otra quiniela</h3>
+              <p class="ranking-note">Crea una entrada adicional. Al crearla queda seleccionada para capturar sus predicciones.</p>
+              <div class="admin-form">
+                <input value="George #3" aria-label="Nombre de quiniela" />
+                <button class="primary">Crear quiniela</button>
+              </div>
+            </article>
+          </div>
+
+          <article class="card summary-table">
+            <h3 id="entry-summary-title">Predicciones de George #1</h3>
+            <p class="ranking-note">Resumen ordenado por fecha para revisar lo capturado en la quiniela seleccionada.</p>
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Grupo</th>
+                  <th>Partido</th>
+                  <th>Quién gana</th>
+                  <th>Predicción</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody id="entry-summary-body">
+                <tr>
+                  <td>11 Jun · 13:00</td>
+                  <td>A</td>
+                  <td>México vs Sudáfrica</td>
+                  <td>Empate</td>
+                  <td><strong>1 - 1</strong></td>
+                  <td><span class="tag">Guardada</span></td>
+                </tr>
+                <tr>
+                  <td>11 Jun · 20:00</td>
+                  <td>A</td>
+                  <td>República de Corea vs República Checa</td>
+                  <td>-</td>
+                  <td>-</td>
+                  <td><span class="tag gray">Pendiente</span></td>
+                </tr>
+                <tr>
+                  <td>12 Jun · 13:00</td>
+                  <td>B</td>
+                  <td>Canadá vs Bosnia y Herzegovina</td>
+                  <td>-</td>
+                  <td>-</td>
+                  <td><span class="tag gray">Pendiente</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </article>
+        </section>
+
+        <section id="predictions" class="screen">
+          <div class="prediction-header">
+            <div>
+              <h3>Completa tus resultados</h3>
+              <p>Captura marcador por marcador para la quiniela activa: George #1.</p>
+            </div>
+            <div class="progress-pill">1 de 72 capturadas</div>
+          </div>
+
+          <div class="filter-bar" aria-label="Filtros de partidos">
+            <button class="filter-pill active">Todos</button>
+            <button class="filter-pill">11 de junio</button>
+            <button class="filter-pill">12 de junio</button>
+            <button class="filter-pill">Grupo A</button>
+            <button class="filter-pill">Grupo B</button>
+          </div>
+
+          <div class="lock-banner">
+            <span>🔒</span>
+            <span>Podrás editar tus predicciones hasta el 10 de junio de 2026 a las 23:59.</span>
+          </div>
+
+          <div class="date-section">
+            <h4>11 de junio</h4>
+            <div class="prediction-grid">
+              <article class="match-card">
+                <div class="match-head">
+                  <div>
+                    <strong>Grupo A</strong>
+                    <span class="tag">Guardada</span>
+                  </div>
+                  <span class="match-time">13:00</span>
+                </div>
+                <div class="match-body">
+                  <div class="team">
+                    <span class="flag">🇲🇽</span>
+                    <span>México</span>
+                  </div>
+                  <div class="score-capture">
+                    <span class="score-box">1</span>
+                    <span>VS</span>
+                    <span class="score-box">1</span>
+                  </div>
+                  <div class="team">
+                    <span class="flag">🇿🇦</span>
+                    <span>Sudáfrica</span>
+                  </div>
+                </div>
+                <div class="winner-row">
+                  <span>Quién gana</span>
+                  <select aria-label="Quién gana México vs Sudáfrica">
+                    <option>Gana México</option>
+                    <option selected>Empate</option>
+                    <option>Gana Sudáfrica</option>
+                  </select>
+                </div>
+                <div class="saved-prediction">
+                  <span>Tu resultado</span>
+                  <strong>1 - 1</strong>
+                  <button class="edit-button">Editar</button>
+                </div>
+              </article>
+
+              <article class="match-card">
+                <div class="match-head">
+                  <div>
+                    <strong>Grupo A</strong>
+                    <span class="tag">Abierto</span>
+                  </div>
+                  <span class="match-time">20:00</span>
+                </div>
+                <div class="match-body">
+                  <div class="team">
+                    <span class="flag">🇰🇷</span>
+                    <span>República de Corea</span>
+                  </div>
+                  <div class="score-capture">
+                    <span class="score-box">-</span>
+                    <span>VS</span>
+                    <span class="score-box">-</span>
+                  </div>
+                  <div class="team">
+                    <span class="flag">🇨🇿</span>
+                    <span>República Checa</span>
+                  </div>
+                </div>
+                <div class="winner-row">
+                  <span>Quién gana</span>
+                  <select aria-label="Quién gana República de Corea vs República Checa">
+                    <option>Gana República de Corea</option>
+                    <option selected>Empate</option>
+                    <option>Gana República Checa</option>
+                  </select>
+                </div>
+              </article>
+            </div>
+          </div>
+
+          <div class="date-section">
+            <h4>12 de junio</h4>
+            <div class="prediction-grid">
+              <article class="match-card">
+                <div class="match-head">
+                  <div>
+                    <strong>Grupo B</strong>
+                    <span class="tag">Abierto</span>
+                  </div>
+                  <span class="match-time">13:00</span>
+                </div>
+                <div class="match-body">
+                  <div class="team">
+                    <span class="flag">🇨🇦</span>
+                    <span>Canadá</span>
+                  </div>
+                  <div class="score-capture">
+                    <span class="score-box">-</span>
+                    <span>VS</span>
+                    <span class="score-box">-</span>
+                  </div>
+                  <div class="team">
+                    <span class="flag">🇧🇦</span>
+                    <span>Bosnia y Herzegovina</span>
+                  </div>
+                </div>
+                <div class="winner-row">
+                  <span>Quién gana</span>
+                  <select aria-label="Quién gana Canadá vs Bosnia y Herzegovina">
+                    <option selected>Gana Canadá</option>
+                    <option>Empate</option>
+                    <option>Gana Bosnia y Herzegovina</option>
+                  </select>
+                </div>
+              </article>
+
+              <article class="match-card">
+                <div class="match-head">
+                  <div>
+                    <strong>Grupo D</strong>
+                    <span class="tag">Abierto</span>
+                  </div>
+                  <span class="match-time">19:00</span>
+                </div>
+                <div class="match-body">
+                  <div class="team">
+                    <span class="flag">🇺🇸</span>
+                    <span>Estados Unidos</span>
+                  </div>
+                  <div class="score-capture">
+                    <span class="score-box">-</span>
+                    <span>VS</span>
+                    <span class="score-box">-</span>
+                  </div>
+                  <div class="team">
+                    <span class="flag">🇵🇾</span>
+                    <span>Paraguay</span>
+                  </div>
+                </div>
+                <div class="winner-row">
+                  <span>Quién gana</span>
+                  <select aria-label="Quién gana Estados Unidos vs Paraguay">
+                    <option selected>Gana Estados Unidos</option>
+                    <option>Empate</option>
+                    <option>Gana Paraguay</option>
+                  </select>
+                </div>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section id="stats" class="screen">
+          <div class="grid metrics">
+            <article class="metric">
+              <span>Más exactos</span>
+              <strong>George #1</strong>
+              <small>7 marcadores</small>
+            </article>
+            <article class="metric">
+              <span>Mejor efectividad</span>
+              <strong>Fer #2</strong>
+              <small>64%</small>
+            </article>
+            <article class="metric">
+              <span>Más arriesgada</span>
+              <strong>Clau #1</strong>
+              <small>3.4 goles promedio</small>
+            </article>
+            <article class="metric">
+              <span>Marcador más repetido</span>
+              <strong>2 - 1</strong>
+              <small>11 predicciones</small>
+            </article>
+          </div>
+          <article class="card" style="margin-top: 16px">
+            <h3>Rendimiento por grupo</h3>
+            <p class="ranking-note">Lectura divertida para ver dónde se están ganando más puntos y qué tan predecibles van los grupos.</p>
+            <table>
+              <thead>
+                <tr>
+                  <th>Grupo</th>
+                  <th>Puntos promedio</th>
+                  <th>Predicciones</th>
+                  <th>Exactos</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>A</td>
+                  <td>3.4</td>
+                  <td>120</td>
+                  <td>18</td>
+                </tr>
+                <tr>
+                  <td>B</td>
+                  <td>2.9</td>
+                  <td>96</td>
+                  <td>11</td>
+                </tr>
+                <tr>
+                  <td>D</td>
+                  <td>2.6</td>
+                  <td>84</td>
+                  <td>7</td>
+                </tr>
+              </tbody>
+            </table>
+          </article>
+        </section>
+
+        <section id="admin" class="screen">
+          <div class="grid admin-grid">
+            <article class="card">
+              <h3>Actualizar resultado</h3>
+              <p class="ranking-note">Captura el marcador oficial. Al guardar, se recalculan los puntos automáticamente.</p>
+              <div class="admin-form">
+                <select aria-label="Partido">
+                  <option>Brazil vs Germany</option>
+                  <option>Mexico vs Japan</option>
+                  <option>Argentina vs Canada</option>
+                </select>
+                <div class="grid" style="grid-template-columns: 1fr 1fr">
+                  <input type="number" value="2" aria-label="Goles local" />
+                  <input type="number" value="1" aria-label="Goles visitante" />
+                </div>
+                <button class="primary">Guardar y recalcular</button>
+              </div>
+            </article>
+
+            <article class="card">
+              <h3>Configuración de bolsa</h3>
+              <p class="ranking-note">Ajusta el costo y la distribución antes de cerrar la convocatoria.</p>
+              <div class="admin-form">
+                <input type="number" value="200" aria-label="Costo por quiniela" />
+                <div class="grid" style="grid-template-columns: repeat(3, 1fr)">
+                  <input type="number" value="60" aria-label="Porcentaje primer lugar" />
+                  <input type="number" value="30" aria-label="Porcentaje segundo lugar" />
+                  <input type="number" value="10" aria-label="Porcentaje tercer lugar" />
+                </div>
+                <p class="ranking-note">38 quinielas · bolsa actual estimada: $7,600 MXN.</p>
+                <button class="primary">Guardar configuración</button>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section id="login" class="screen">
+          <div class="login-panel">
+            <article class="card">
+              <h3>Ingreso</h3>
+              <div class="admin-form">
+                <input value="George" aria-label="Nickname" />
+                <input value="codigo-secreto" type="password" aria-label="Código" />
+                <input value="George Demo" aria-label="Nombre completo" />
+                <input value="george@example.com" aria-label="Email" />
+                <button class="primary">Entrar</button>
+              </div>
+            </article>
+            <p class="footer-note">Vista estática para revisar diseño. La app productiva usa Streamlit y Google Sheets.</p>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      const labels = {
+        dashboard: ["Dashboard", "Fase de grupos: reglas, bolsa acumulada, premios y posiciones."],
+        entries: ["Mis quinielas", "Crea, revisa y cambia tu quiniela activa."],
+        predictions: ["Predicciones", "Completa marcadores por fecha o grupo antes del cierre."],
+        stats: ["Estadísticas", "Insights de exactos, efectividad, riesgo y grupos."],
+        admin: ["Panel de administración", "Resultados oficiales y configuración de bolsa."],
+        login: ["Ingreso", "Acceso simple para participantes y administradores."]
+      };
+
+      const entrySummaries = {
+        "George #1": [
+          ["11 Jun · 13:00", "A", "México vs Sudáfrica", "Empate", "1 - 1", "Guardada"],
+          ["11 Jun · 20:00", "A", "República de Corea vs República Checa", "-", "-", "Pendiente"],
+          ["12 Jun · 13:00", "B", "Canadá vs Bosnia y Herzegovina", "-", "-", "Pendiente"]
+        ],
+        "George #2": [
+          ["11 Jun · 13:00", "A", "México vs Sudáfrica", "Gana México", "2 - 0", "Guardada"],
+          ["11 Jun · 20:00", "A", "República de Corea vs República Checa", "Empate", "1 - 1", "Guardada"],
+          ["12 Jun · 13:00", "B", "Canadá vs Bosnia y Herzegovina", "-", "-", "Pendiente"]
+        ]
+      };
+
+      function renderEntrySummary(entryName) {
+        const rows = entrySummaries[entryName] || [];
+        document.getElementById("entry-summary-title").textContent = `Predicciones de ${entryName}`;
+        document.getElementById("active-entry-pill").textContent = `⚽ Quiniela activa: ${entryName}`;
+        document.getElementById("sidebar-entry-select").value = entryName;
+        document.querySelectorAll("[data-entry-card]").forEach((card) => {
+          const selected = card.dataset.entryName === entryName;
+          card.classList.toggle("selected", selected);
+          const status = card.querySelector("[data-entry-status]");
+          status.textContent = selected ? "Seleccionada" : "Ver";
+          status.className = selected ? "tag" : "tag gray";
+        });
+        document.getElementById("entry-summary-body").innerHTML = rows.map((row) => {
+          const [date, group, match, winner, prediction, status] = row;
+          const tagClass = status === "Guardada" ? "tag" : "tag gray";
+          const predictionValue = prediction === "-" ? "-" : `<strong>${prediction}</strong>`;
+          return `
+            <tr>
+              <td>${date}</td>
+              <td>${group}</td>
+              <td>${match}</td>
+              <td>${winner}</td>
+              <td>${predictionValue}</td>
+              <td><span class="${tagClass}">${status}</span></td>
+            </tr>
+          `;
+        }).join("");
+      }
+
+      document.querySelectorAll("[data-entry-card]").forEach((card) => {
+        card.addEventListener("click", () => renderEntrySummary(card.dataset.entryName));
+      });
+
+      document.getElementById("sidebar-entry-select").addEventListener("change", (event) => {
+        renderEntrySummary(event.target.value);
+      });
+
+      document.querySelectorAll("[data-screen]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const target = button.dataset.screen;
+          document.querySelectorAll("[data-screen]").forEach((item) => item.classList.remove("active"));
+          document.querySelectorAll(".screen").forEach((screen) => screen.classList.remove("active"));
+          button.classList.add("active");
+          document.getElementById(target).classList.add("active");
+          document.getElementById("screen-title").textContent = labels[target][0];
+          document.getElementById("screen-subtitle").textContent = labels[target][1];
+        });
+      });
+
+      renderEntrySummary("George #1");
+    </script>
+  </body>
+</html>
