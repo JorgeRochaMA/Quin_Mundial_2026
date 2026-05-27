@@ -413,7 +413,8 @@ div[data-testid="stDataFrame"] [role="gridcell"] {
 .qm-dashboard-card,
 .qm-rule-card,
 .qm-podium-card,
-.qm-info-card {
+.qm-info-card,
+.qm-entry-card {
     min-height: 6.4rem;
     padding: 0.85rem;
     border-top: 4px solid var(--qm-green-2);
@@ -469,6 +470,78 @@ div[data-testid="stDataFrame"] [role="gridcell"] {
     font-size: 1.35rem;
     font-weight: 950;
     margin-top: 0.65rem;
+}
+
+.qm-entry-card {
+    background: var(--qm-panel-strong);
+    border: 1px solid rgba(220, 229, 236, 0.95);
+    border-radius: 8px;
+    box-shadow: var(--qm-shadow);
+    min-height: 9rem;
+    overflow: hidden;
+    position: relative;
+}
+
+.qm-entry-card::before {
+    background: var(--qm-green-2);
+    content: "";
+    height: 4px;
+    inset: 0 0 auto 0;
+    position: absolute;
+}
+
+.qm-entry-card.qm-entry-selected {
+    border-color: rgba(214, 165, 51, 0.55);
+    box-shadow: 0 18px 44px rgba(214, 165, 51, 0.16);
+}
+
+.qm-entry-card.qm-entry-selected::before {
+    background: var(--qm-gold);
+}
+
+.qm-entry-card-top {
+    align-items: flex-start;
+    display: flex;
+    gap: 0.75rem;
+    justify-content: space-between;
+}
+
+.qm-entry-name {
+    color: var(--qm-navy);
+    font-size: 1.08rem;
+    font-weight: 920;
+    line-height: 1.15;
+}
+
+.qm-entry-date {
+    color: var(--qm-muted);
+    font-size: 0.82rem;
+    font-weight: 650;
+    margin-top: 0.22rem;
+}
+
+.qm-entry-points {
+    color: var(--qm-green);
+    font-size: 1.55rem;
+    font-weight: 950;
+    line-height: 1;
+    margin-top: 1rem;
+}
+
+.qm-entry-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.75rem;
+}
+
+.qm-entry-meta span {
+    background: rgba(12, 33, 55, 0.06);
+    border-radius: 999px;
+    color: var(--qm-muted);
+    font-size: 0.76rem;
+    font-weight: 800;
+    padding: 0.3rem 0.5rem;
 }
 
 .qm-section-header {
@@ -639,7 +712,8 @@ hr {
     .qm-dashboard-card,
     .qm-rule-card,
     .qm-podium-card,
-    .qm-info-card {
+    .qm-info-card,
+    .qm-entry-card {
         min-height: auto;
     }
 }
