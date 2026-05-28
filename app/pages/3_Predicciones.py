@@ -34,6 +34,49 @@ MONTHS_ES = {
 }
 
 
+TEAM_FLAGS = {
+    "Argentina": "🇦🇷",
+    "Australia": "🇦🇺",
+    "Belgium": "🇧🇪",
+    "Bosnia and Herzegovina": "🇧🇦",
+    "Brazil": "🇧🇷",
+    "Canada": "🇨🇦",
+    "Chile": "🇨🇱",
+    "Colombia": "🇨🇴",
+    "Costa Rica": "🇨🇷",
+    "Croatia": "🇭🇷",
+    "Curaçao": "🇨🇼",
+    "Czechia": "🇨🇿",
+    "Denmark": "🇩🇰",
+    "Ecuador": "🇪🇨",
+    "England": "🏴",
+    "France": "🇫🇷",
+    "Germany": "🇩🇪",
+    "Haiti": "🇭🇹",
+    "Italy": "🇮🇹",
+    "Japan": "🇯🇵",
+    "Korea Republic": "🇰🇷",
+    "Mexico": "🇲🇽",
+    "Morocco": "🇲🇦",
+    "Netherlands": "🇳🇱",
+    "Paraguay": "🇵🇾",
+    "Poland": "🇵🇱",
+    "Portugal": "🇵🇹",
+    "Qatar": "🇶🇦",
+    "Saudi Arabia": "🇸🇦",
+    "Scotland": "🏴",
+    "Serbia": "🇷🇸",
+    "South Africa": "🇿🇦",
+    "Spain": "🇪🇸",
+    "Switzerland": "🇨🇭",
+    "Türkiye": "🇹🇷",
+    "Turkey": "🇹🇷",
+    "Uruguay": "🇺🇾",
+    "USA": "🇺🇸",
+    "United States": "🇺🇸",
+}
+
+
 def _clean_html(markup: str) -> str:
     """Remove indentation so Markdown does not render HTML as a code block."""
     return "\n".join(
@@ -46,6 +89,12 @@ def _clean_html(markup: str) -> str:
 def _html(markup: str) -> None:
     """Render HTML safely."""
     st.markdown(_clean_html(markup), unsafe_allow_html=True)
+
+
+def _team_flag(team_name: str) -> str:
+    """Return a flag emoji for a team."""
+    normalized = clean_text(team_name)
+    return TEAM_FLAGS.get(normalized, "⚽")
 
 
 def _date_label(value: Any) -> str:
@@ -121,13 +170,46 @@ def _status_accent(current_prediction: dict[str, Any], locked: bool) -> str:
     return "gold"
 
 
+def _score_text_from_values(home_goals: int, away_goals: int) -> str:
+    """Return score as a compact text value."""
+    return f"{home_goals}-{away_goals}"
+
+
+def _parse_score_text(score_text: str) -> tuple[int, int] | None:
+    """Parse a score text like 1-0, 1 - 0 or 1:0."""
+    cleaned = clean_text(score_text).replace(":", "-").replace(" ", "")
+
+    if "-" not in cleaned:
+        return None
+
+    parts = cleaned.split("-")
+    if len(parts) != 2:
+        return None
+
+    home_raw, away_raw = parts
+
+    if not home_raw.isdigit() or not away_raw.isdigit():
+        return None
+
+    home_goals = int(home_raw)
+    away_goals = int(away_raw)
+
+    if home_goals < 0 or away_goals < 0:
+        return None
+
+    if home_goals > 20 or away_goals > 20:
+        return None
+
+    return home_goals, away_goals
+
+
 def _render_date_header(date_label: str, matches_count: int) -> None:
     """Render a polished date header."""
     _html(
         f"""
         <div class="qm-date-header">
             <div>
-                <div class="qm-date-title">{escape(date_label)}</div>
+                <div class="qm-date-title">{escape(date_label.title())}</div>
                 <div class="qm-date-subtitle">{matches_count} partidos programados</div>
             </div>
             <span class="qm-status-pill qm-accent-navy">Fase de grupos</span>
@@ -154,36 +236,27 @@ def _render_lock_notice(is_locked: bool, lock_at: str) -> None:
         )
 
 
-def _render_match_intro(
-    match_id: str,
-    group_label: str,
-    time_label: str,
-    status_label: str,
-    status_accent: str,
-    home_team: str,
-    away_team: str,
-) -> None:
-    """Render the static match card intro."""
-    _html(
-    f"""
-    <div class="qm-match-card qm-accent-{escape(status_accent)}">
-        <div class="qm-match-top">
-            <div>
-                <div class="qm-match-group">Grupo {escape(group_label)}</div>
-            </div>
-            <div class="qm-match-time">{escape(time_label)}</div>
-        </div>
-        <div class="qm-match-status-row">
-            <span class="qm-status-pill qm-accent-{escape(status_accent)}">{escape(status_label)}</span>
-        </div>
-        <div class="qm-match-teams">
-            <div class="qm-team-name">{escape(home_team)}</div>
-            <div class="qm-vs-chip">VS</div>
-            <div class="qm-team-name qm-team-right">{escape(away_team)}</div>
-        </div>
-    </div>
-    """
-)
+def _render_score_input_value(value: Any) -> str:
+    """Return a compact score input value."""
+    return str(as_int(value, 0))
+
+
+def _parse_goal_input(value: str) -> int | None:
+    """Parse one goal input."""
+    cleaned = clean_text(value)
+
+    if cleaned == "":
+        return None
+
+    if not cleaned.isdigit():
+        return None
+
+    goals = int(cleaned)
+
+    if goals < 0 or goals > 20:
+        return None
+
+    return goals
 
 
 def _render_match_card(
@@ -202,51 +275,101 @@ def _render_match_card(
     status_label = _status_label(current_prediction, locked)
     status_accent = _status_accent(current_prediction, locked)
 
-    _render_match_intro(
-        match_id=match_id,
-        group_label=group_label,
-        time_label=time_label,
-        status_label=status_label,
-        status_accent=status_accent,
-        home_team=home_team,
-        away_team=away_team,
-    )
-
     default_home = as_int(current_prediction.get("pred_home_goals"), 0)
     default_away = as_int(current_prediction.get("pred_away_goals"), 0)
 
-    with st.form(f"prediction_{match_id}", border=True):
-        score_left, score_middle, score_right = st.columns([1, 0.28, 1])
+    _html(
+        f"""
+        <div class="qm-prediction-card qm-accent-{escape(status_accent)}">
+            <div class="qm-match-card-top">
+                <div class="qm-match-group">Grupo {escape(group_label)}</div>
+                <div class="qm-match-time">{escape(time_label)}</div>
+            </div>
 
-        home_goals = score_left.number_input(
-            f"Goles de {home_team}",
-            min_value=0,
-            max_value=20,
-            value=default_home,
-            disabled=locked,
-            key=f"home_{match_id}",
-            label_visibility="collapsed",
+            <div class="qm-match-status-row">
+                <span class="qm-status-pill qm-accent-{escape(status_accent)}">
+                    {escape(status_label)}
+                </span>
+            </div>
+        </div>
+        """
+    )
+
+    with st.form(f"prediction_{match_id}", border=False):
+        _html(
+            f"""
+            <div class="qm-match-teams-preview">
+                <div class="qm-match-team-preview">
+                    <div class="qm-match-flag">{escape(_team_flag(home_team))}</div>
+                    <div class="qm-match-team-label">{escape(home_team)}</div>
+                </div>
+
+                <div class="qm-match-vs-preview">VS</div>
+
+                <div class="qm-match-team-preview">
+                    <div class="qm-match-flag">{escape(_team_flag(away_team))}</div>
+                    <div class="qm-match-team-label">{escape(away_team)}</div>
+                </div>
+            </div>
+            """
         )
 
-        score_middle.markdown(
-            "<div class='qm-score-vs'>VS</div>",
-            unsafe_allow_html=True,
-        )
+        score_cols = st.columns([1.4, 0.8, 0.45, 0.8, 1.4])
 
-        away_goals = score_right.number_input(
-            f"Goles de {away_team}",
-            min_value=0,
-            max_value=20,
-            value=default_away,
-            disabled=locked,
-            key=f"away_{match_id}",
-            label_visibility="collapsed",
-        )
+        with score_cols[0]:
+            st.markdown(
+                f"<div class='qm-score-side-label'>{escape(home_team)}</div>",
+                unsafe_allow_html=True,
+            )
 
-        calculated_result = result_from_score(home_goals, away_goals)
+        with score_cols[1]:
+            home_score_text = st.text_input(
+                "Goles local",
+                value=_render_score_input_value(default_home),
+                disabled=locked,
+                key=f"home_score_{match_id}",
+                label_visibility="collapsed",
+                max_chars=2,
+            )
+
+        with score_cols[2]:
+            st.markdown("<div class='qm-score-separator'>VS</div>", unsafe_allow_html=True)
+
+        with score_cols[3]:
+            away_score_text = st.text_input(
+                "Goles visitante",
+                value=_render_score_input_value(default_away),
+                disabled=locked,
+                key=f"away_score_{match_id}",
+                label_visibility="collapsed",
+                max_chars=2,
+            )
+
+        with score_cols[4]:
+            st.markdown(
+                f"<div class='qm-score-side-label qm-score-side-label-right'>{escape(away_team)}</div>",
+                unsafe_allow_html=True,
+            )
+
+        parsed_home = _parse_goal_input(home_score_text)
+        parsed_away = _parse_goal_input(away_score_text)
+        valid_score = parsed_home is not None and parsed_away is not None
+
+        if valid_score:
+            home_goals = parsed_home
+            away_goals = parsed_away
+            calculated_result = result_from_score(home_goals, away_goals)
+            calculated_label = _result_label(home_team, away_team, home_goals, away_goals)
+        else:
+            home_goals = default_home
+            away_goals = default_away
+            calculated_result = result_from_score(home_goals, away_goals)
+            calculated_label = "Marcador inválido"
+
         options = _result_options(home_team, away_team)
         option_keys = list(options.keys())
         saved_result = clean_text(current_prediction.get("selected_result"))
+
         selected_index = (
             option_keys.index(saved_result)
             if saved_result in option_keys
@@ -262,11 +385,13 @@ def _render_match_card(
             key=f"winner_{match_id}",
         )
 
-        calculated_label = _result_label(home_team, away_team, home_goals, away_goals)
+        result_class = "qm-calculated-result"
+        if not valid_score:
+            result_class = "qm-calculated-result qm-calculated-result-error"
 
         st.markdown(
             f"""
-            <div class="qm-calculated-result">
+            <div class="{result_class}">
                 Según el marcador: <strong>{escape(calculated_label)}</strong>
             </div>
             """,
@@ -282,7 +407,9 @@ def _render_match_card(
         )
 
     if submitted:
-        if selected_result != calculated_result:
+        if not valid_score:
+            st.error("Captura un marcador válido. Usa números del 0 al 20.")
+        elif selected_result != calculated_result:
             st.error("El ganador seleccionado debe coincidir con el marcador capturado.")
         else:
             try:
@@ -355,11 +482,13 @@ matches = matches.sort_values("parsed_date", na_position="last")
 captured = 0 if entry_predictions.empty else int(entry_predictions["match_id"].nunique())
 total_matches = len(matches)
 pending = max(total_matches - captured, 0)
+
 entry_points = (
     0
     if entry_predictions.empty or "points" not in entry_predictions.columns
     else int(entry_predictions["points"].apply(lambda value: as_int(value, 0)).sum())
 )
+
 lock_at = clean_text(config.get("predictions_lock_at")) or "2026-06-10 23:59"
 global_locked = is_global_prediction_lock_active(config)
 
@@ -420,7 +549,8 @@ visible_rows: list[tuple[int, pd.Series, dict[str, Any], bool]] = []
 for index, match in filtered_matches.iterrows():
     match_id = clean_text(match.get("match_id"))
     current_prediction = _prediction_for_match(entry_predictions, match_id)
-    locked = is_match_locked(match.to_dict(), config)
+    match_locked = is_match_locked(match.to_dict(), config)
+    locked = match_locked or global_locked
 
     if status_filter == "Pendientes" and current_prediction:
         continue
@@ -458,6 +588,6 @@ for date_label in dict.fromkeys(row[1]["date_label"] for row in visible_rows):
                     match.to_dict(),
                     current_prediction,
                     entry["entry_id"],
-                    locked or global_locked,
+                    locked,
                     repo,
                 )

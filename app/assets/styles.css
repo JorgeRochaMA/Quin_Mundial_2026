@@ -1093,3 +1093,117 @@ div[data-testid="stForm"] {
         align-items: flex-start;
     }
 }
+
+/* Prediction card - clean score layout */
+.qm-match-teams-preview {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 0 0.5rem;
+}
+
+.qm-match-team-preview {
+    text-align: center;
+    min-width: 0;
+}
+
+.qm-match-flag {
+    font-size: 2rem;
+    line-height: 1;
+    margin-bottom: 0.35rem;
+}
+
+.qm-match-team-label {
+    font-weight: 900;
+    color: #102033;
+    font-size: 1.05rem;
+    line-height: 1.1;
+    word-break: normal;
+    overflow-wrap: anywhere;
+}
+
+.qm-match-vs-preview {
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 999px;
+    background: rgba(10, 132, 96, 0.12);
+    border: 1px solid rgba(10, 132, 96, 0.22);
+    color: #102033;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 0.8rem;
+}
+
+.qm-score-side-label {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    font-weight: 800;
+    color: #102033;
+    font-size: 0.9rem;
+}
+
+.qm-score-side-label-right {
+    justify-content: flex-end;
+    text-align: right;
+}
+
+.qm-score-separator {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    color: #64748b;
+}
+
+div[data-testid="stForm"] input {
+    text-align: center;
+}
+
+/* Mobile prediction card */
+@media (max-width: 768px) {
+    .qm-match-teams-preview {
+        grid-template-columns: 1fr auto 1fr;
+        gap: 0.45rem;
+        padding-top: 0.8rem;
+    }
+
+    .qm-match-flag {
+        font-size: 1.65rem;
+    }
+
+    .qm-match-team-label {
+        font-size: 0.9rem;
+    }
+
+    .qm-match-vs-preview {
+        width: 2.2rem;
+        height: 2.2rem;
+        font-size: 0.72rem;
+    }
+
+    .qm-score-side-label {
+        display: none;
+    }
+
+    .qm-score-separator {
+        min-height: 42px;
+        font-size: 0.78rem;
+    }
+
+    div[data-testid="stForm"] input {
+        height: 42px;
+        min-height: 42px;
+        border-radius: 14px;
+        font-size: 1rem;
+        font-weight: 800;
+        text-align: center;
+        border: 1px solid rgba(15, 23, 42, 0.18);
+        background: #ffffff;
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+    }
+}
