@@ -1,6 +1,6 @@
 # Quiniela Mundial 2026
 
-Clean MVP for a World Cup 2026 prediction pool built with Python, Streamlit, Pandas, and Google Sheets.
+Participa en la Quiniela Mundial 2026, captura tus marcadores, compite con tus amigos y sigue el ranking en vivo durante la fase de grupos by:jr.
 
 The user-facing app is in Spanish. Code, comments, and technical documentation are in English.
 
