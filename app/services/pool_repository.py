@@ -222,6 +222,35 @@ class PoolRepository:
 
         self.sheets.upsert_record(ENTRIES, entry, SHEET_COLUMNS[ENTRIES], ["entry_id"])
         self._invalidate(ENTRIES)
+    
+    def delete_entry(self, entry_id: str) -> bool:
+        """Delete an entry and all predictions linked to it."""
+        entry_id = validate_resource_id(entry_id, "entry_id")
+
+        entries = self._read_sheet(ENTRIES)
+
+        if entries.empty:
+            return False
+
+        entry_exists = not entries[entries["entry_id"] == entry_id].empty
+
+        if not entry_exists:
+            return False
+
+        updated_entries = entries[entries["entry_id"] != entry_id].to_dict("records")
+
+        predictions = self._read_sheet(PREDICTIONS)
+        updated_predictions: list[dict[str, Any]] = []
+
+        if not predictions.empty:
+            updated_predictions = predictions[predictions["entry_id"] != entry_id].to_dict("records")
+
+        self.sheets.replace_records(ENTRIES, updated_entries, SHEET_COLUMNS[ENTRIES])
+        self.sheets.replace_records(PREDICTIONS, updated_predictions, SHEET_COLUMNS[PREDICTIONS])
+
+        self._invalidate(ENTRIES, PREDICTIONS)
+
+        return True
 
     def upsert_prediction(
         self,
