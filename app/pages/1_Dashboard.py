@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from html import escape
+from textwrap import dedent
 
 import pandas as pd
 import streamlit as st
@@ -13,6 +14,15 @@ from utils.constants import ENTRIES, PREDICTIONS, RESULTS, USERS
 from utils.data import as_bool, as_float, as_int, clean_text
 from utils.prizes import calculate_prizes, format_mxn
 from utils.rankings import build_rankings
+
+
+def _clean_html(markup: str) -> str:
+    """Remove indentation so Markdown does not render HTML as a code block."""
+    return "\n".join(
+        line.strip()
+        for line in dedent(markup).strip().splitlines()
+        if line.strip()
+    )
 
 
 def _percent_label(value: float) -> str:
@@ -52,24 +62,39 @@ def _render_podium(rankings: pd.DataFrame) -> None:
         return
 
     top_entries = rankings.head(3)
-    columns = st.columns(len(top_entries))
-    medals = {1: "Oro", 2: "Plata", 3: "Bronce"}
-    accents = {1: "gold", 2: "green", 3: "navy"}
-    for column, (_, row) in zip(columns, top_entries.iterrows()):
+    medals = {1: "🥇", 2: "🥈", 3: "🥉"}
+    labels = {1: "Oro", 2: "Plata", 3: "Bronce"}
+    items = []
+    for _, row in top_entries.iterrows():
         position = as_int(row.get("position"), 0)
-        with column:
-            st.markdown(
-                f"""
-                <div class="qm-podium-card qm-accent-{accents.get(position, "green")}">
-                    <div class="qm-podium-rank">#{position} · {escape(medals.get(position, "Lugar"))}</div>
+        first_class = " qm-podium-item-first" if position == 1 else ""
+        items.append(
+            f"""
+            <div class="qm-podium-item{first_class}">
+                <div class="qm-podium-medal">{escape(medals.get(position, "🏅"))}</div>
+                <div class="qm-podium-main">
+                    <div class="qm-podium-rank">#{position} · {escape(labels.get(position, "Lugar"))}</div>
                     <div class="qm-podium-name">{escape(clean_text(row.get("entry_name")) or "Quiniela")}</div>
                     <div class="qm-podium-user">{escape(clean_text(row.get("nickname")) or "Sin apodo")}</div>
-                    <div class="qm-podium-points">{as_int(row.get("total_points"), 0)} pts</div>
-                    <div class="qm-dashboard-detail">{as_int(row.get("exact_scores"), 0)} exactos</div>
                 </div>
-                """,
-                unsafe_allow_html=True,
-            )
+                <div class="qm-podium-stats">
+                    <strong>{as_int(row.get("total_points"), 0)} pts</strong>
+                    <span>{as_int(row.get("exact_scores"), 0)} exactos · {as_int(row.get("predictions_count"), 0)} predicciones</span>
+                </div>
+            </div>
+            """
+        )
+
+    st.markdown(
+        _clean_html(
+            f"""
+        <section class="qm-podium-panel">
+            {"".join(items)}
+        </section>
+        """
+        ),
+        unsafe_allow_html=True,
+    )
 
 
 def _render_rankings(rankings: pd.DataFrame) -> None:
