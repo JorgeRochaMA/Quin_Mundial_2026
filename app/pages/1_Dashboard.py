@@ -159,50 +159,125 @@ st.markdown(
 )
 
 st.markdown("### Estado de la quiniela")
-state_cols = st.columns(6)
-state_cards = [
-    ("Participantes", str(total_users), "Usuarios activos", "green"),
-    ("Quinielas", str(active_entries), f"{paid_entries} pagadas", "gold"),
-    ("Bolsa", format_mxn(prizes["total_pool"]), "Acumulada", "gold"),
-    ("Costo", format_mxn(entry_fee), "Por quiniela", "navy"),
-    ("Jugados", str(played_matches), "Con resultado", "green"),
-    ("Pendientes", str(remaining_matches), "Por jugar", "red"),
-]
-for column, (label, value, detail, accent) in zip(state_cols, state_cards):
-    with column:
-        _dashboard_card(label, value, detail, accent)
+st.caption("Resumen rápido de participación, bolsa y avance de partidos.")
+st.markdown(
+    f"""
+    <section class="qm-status-panel">
+        <div class="qm-status-panel-item">
+            <span class="qm-status-panel-icon">👥</span>
+            <span>
+                <strong>{total_users}</strong>
+                <small>Participantes</small>
+            </span>
+        </div>
+        <div class="qm-status-panel-item">
+            <span class="qm-status-panel-icon">🎟️</span>
+            <span>
+                <strong>{paid_entries}/{active_entries}</strong>
+                <small>Pagadas / activas</small>
+            </span>
+        </div>
+        <div class="qm-status-panel-item qm-status-panel-money">
+            <span class="qm-status-panel-icon">💰</span>
+            <span>
+                <strong>{format_mxn(prizes["total_pool"])}</strong>
+                <small>Bolsa acumulada</small>
+            </span>
+        </div>
+        <div class="qm-status-panel-item">
+            <span class="qm-status-panel-icon">💵</span>
+            <span>
+                <strong>{format_mxn(entry_fee)}</strong>
+                <small>Costo por quiniela</small>
+            </span>
+        </div>
+        <div class="qm-status-panel-item">
+            <span class="qm-status-panel-icon">⚽</span>
+            <span>
+                <strong>{played_matches}</strong>
+                <small>Partidos jugados</small>
+            </span>
+        </div>
+        <div class="qm-status-panel-item">
+            <span class="qm-status-panel-icon">⏳</span>
+            <span>
+                <strong>{remaining_matches}</strong>
+                <small>Partidos pendientes</small>
+            </span>
+        </div>
+    </section>
+    """,
+    unsafe_allow_html=True,
+)
 
 st.markdown("### Reglas de puntuación")
-rule_cols = st.columns(4)
-rules = [
-    ("🎯", "3 pts", "Acierta ganador o empate", "gold"),
-    ("⚽", "+2 pts", "Marcador exacto", "green"),
-    ("🏆", "5 pts", "Máximo por partido", "navy"),
-    ("—", "0 pts", "Predicción incorrecta", "red"),
-]
-for column, (icon, value, detail, accent) in zip(rule_cols, rules):
-    with column:
-        st.markdown(
-            f"""
-            <div class="qm-rule-card qm-accent-{accent}">
-                <div class="qm-rule-icon">{icon}</div>
-                <div class="qm-dashboard-value">{value}</div>
-                <div class="qm-dashboard-detail">{detail}</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+st.caption("Puntaje por partido capturado.")
+st.markdown(
+    """
+    <section class="qm-compact-panel qm-rules-panel">
+        <div class="qm-compact-panel-item">
+            <span class="qm-status-panel-icon">🎯</span>
+            <span>
+                <strong>3 pts</strong>
+                <small>Acierta ganador o empate</small>
+            </span>
+        </div>
+        <div class="qm-compact-panel-item">
+            <span class="qm-status-panel-icon">⚽</span>
+            <span>
+                <strong>+2 pts</strong>
+                <small>Marcador exacto</small>
+            </span>
+        </div>
+        <div class="qm-compact-panel-item">
+            <span class="qm-status-panel-icon">🏆</span>
+            <span>
+                <strong>5 pts</strong>
+                <small>Máximo por partido</small>
+            </span>
+        </div>
+        <div class="qm-compact-panel-item">
+            <span class="qm-status-panel-icon">—</span>
+            <span>
+                <strong>0 pts</strong>
+                <small>Predicción incorrecta</small>
+            </span>
+        </div>
+    </section>
+    """,
+    unsafe_allow_html=True,
+)
 
 st.markdown("### Premios actuales")
-prize_cols = st.columns(3)
-prize_cards = [
-    ("1er lugar · " + _percent_label(first_pct), prizes["first_place"], "Campeón de la quiniela", "gold"),
-    ("2do lugar · " + _percent_label(second_pct), prizes["second_place"], "Subcampeón", "green"),
-    ("3er lugar · " + _percent_label(third_pct), prizes["third_place"], "Tercer puesto", "navy"),
-]
-for column, (place, amount, detail, accent) in zip(prize_cols, prize_cards):
-    with column:
-        _dashboard_card(place, format_mxn(amount), detail, accent)
+st.caption("Distribución actual de la bolsa acumulada.")
+st.markdown(
+    f"""
+    <section class="qm-compact-panel qm-prizes-panel">
+        <div class="qm-compact-panel-item qm-compact-money">
+            <span class="qm-status-panel-icon">🥇</span>
+            <span>
+                <strong>{format_mxn(prizes["first_place"])}</strong>
+                <small>1er lugar · {_percent_label(first_pct)}</small>
+            </span>
+        </div>
+        <div class="qm-compact-panel-item qm-compact-money">
+            <span class="qm-status-panel-icon">🥈</span>
+            <span>
+                <strong>{format_mxn(prizes["second_place"])}</strong>
+                <small>2do lugar · {_percent_label(second_pct)}</small>
+            </span>
+        </div>
+        <div class="qm-compact-panel-item qm-compact-money">
+            <span class="qm-status-panel-icon">🥉</span>
+            <span>
+                <strong>{format_mxn(prizes["third_place"])}</strong>
+                <small>3er lugar · {_percent_label(third_pct)}</small>
+            </span>
+        </div>
+    </section>
+    """,
+    unsafe_allow_html=True,
+)
 
 st.markdown("### Podio de la tabla")
 _render_podium(rankings)
