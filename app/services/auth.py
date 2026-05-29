@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from difflib import get_close_matches
 import hashlib
 import hmac
 import secrets
@@ -18,6 +19,7 @@ class AuthError(ValueError):
 
 PASSWORD_HASH_ALGORITHM = "pbkdf2_sha256"
 PASSWORD_HASH_ITERATIONS = 260_000
+SIMILAR_NICKNAME_CUTOFF = 0.82
 
 
 def _same_secret(left: str, right: str) -> bool:
@@ -64,6 +66,45 @@ def _public_user(user: dict[str, Any]) -> dict[str, Any]:
     return public
 
 
+def _find_similar_nickname(nickname: str, existing_nicknames: list[str]) -> str | None:
+    """Return an existing nickname that is close enough to block accidental duplicates."""
+    normalized = clean_text(nickname).lower()
+    if not normalized:
+        return None
+
+    normalized_to_original = {
+        clean_text(existing).lower(): clean_text(existing)
+        for existing in existing_nicknames
+        if clean_text(existing)
+    }
+    candidates = [candidate for candidate in normalized_to_original if candidate != normalized]
+
+    contains_matches = [
+        candidate
+        for candidate in candidates
+        if len(normalized) >= 4
+        and len(candidate) >= 4
+        and (normalized in candidate or candidate in normalized)
+    ]
+    if contains_matches:
+        best = min(
+            contains_matches,
+            key=lambda candidate: (abs(len(candidate) - len(normalized)), candidate),
+        )
+        return normalized_to_original[best]
+
+    close_matches = get_close_matches(
+        normalized,
+        candidates,
+        n=1,
+        cutoff=SIMILAR_NICKNAME_CUTOFF,
+    )
+    if close_matches:
+        return normalized_to_original[close_matches[0]]
+
+    return None
+
+
 def login_or_register(
     repo: PoolRepository,
     nickname: str,
@@ -108,6 +149,15 @@ def login_or_register(
             repo.update_user_role(existing["user_id"], ROLE_ADMIN)
             existing["role"] = ROLE_ADMIN
         return _public_user(existing)
+
+    similar_nickname = _find_similar_nickname(nickname, repo.list_active_user_nicknames())
+    if similar_nickname:
+        raise AuthError(
+            (
+                f"No encontramos '{nickname}', pero existe un usuario parecido: "
+                f"'{similar_nickname}'. Revisa tu nickname antes de crear uno nuevo."
+            )
+        )
 
     user = repo.create_user(
         nickname=nickname,

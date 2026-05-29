@@ -138,6 +138,20 @@ class PoolRepository:
         user = matches.iloc[0].to_dict()
         return user if as_bool(user.get("active", "TRUE")) else None
 
+    def list_active_user_nicknames(self) -> list[str]:
+        """Return nicknames for active users."""
+        users = self._read_sheet(USERS)
+
+        if users.empty:
+            return []
+
+        active_users = users[users["active"].apply(as_bool)] if "active" in users else users
+        return [
+            clean_text(row.get("nickname"))
+            for _, row in active_users.iterrows()
+            if clean_text(row.get("nickname"))
+        ]
+
     def create_user(
         self,
         nickname: str,
