@@ -14,6 +14,9 @@ configure_page("Ingreso")
 repo = get_repository_or_stop()
 render_sidebar()
 
+if current_user():
+    st.switch_page("pages/0_Empieza_A_Jugar.py")
+
 page_hero(
     "Quiniela Mundial 2026",
     (
@@ -23,15 +26,6 @@ page_hero(
     eyebrow="ACCESO A LA QUINIELA",
     pills=["72 partidos", "$200 MXN", "Máximo 5 pts", "Ranking en vivo"],
 )
-
-if current_user():
-    info_card(
-        f"Sesión activa: {current_user().get('nickname')}",
-        "Usa el menú lateral para ir al dashboard, crear quinielas o capturar predicciones.",
-        icon="✅",
-        accent="green",
-    )
-    st.stop()
 
 section_header("Cómo funciona", "Cuatro pasos para entrar y competir en la quiniela.")
 how_cols = st.columns(4)
@@ -79,6 +73,6 @@ if submitted:
         )
         st.session_state["user"] = user
         st.success("Listo, ya estás dentro.")
-        st.rerun()
+        st.switch_page("pages/0_Empieza_A_Jugar.py")
     except (AuthError, ValueError) as exc:
         st.error(str(exc))
