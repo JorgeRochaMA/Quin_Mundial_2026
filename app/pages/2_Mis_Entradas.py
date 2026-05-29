@@ -8,7 +8,7 @@ from textwrap import dedent
 import streamlit as st
 
 from components.layout import configure_page, render_sidebar, require_login, user_entries
-from components.ui import empty_state, info_card, metric_card, page_hero, section_header
+from components.ui import empty_state, info_card, page_hero, section_header
 from services.runtime import get_repository_or_stop
 from utils.constants import MATCHES, PREDICTIONS, RESULTS, USERS
 from utils.data import as_bool, as_int, clean_text
@@ -28,14 +28,17 @@ def _clean_html(markup: str) -> str:
 def _entry_card(
     entry: dict[str, object],
     points: int,
+    captured_predictions: int,
+    total_matches: int,
     is_selected: bool,
 ) -> None:
-    """Render one entry management card."""
+    """Render one entry review card."""
     selected_class = "qm-entry-selected" if is_selected else ""
-    selected_label = "Seleccionada" if is_selected else "Disponible"
+    selected_label = "Revisando" if is_selected else "Disponible"
     selected_accent = "green" if is_selected else "navy"
     paid_label = "Pagada" if as_bool(entry.get("paid")) else "Pago pendiente"
     active_label = "Activa" if as_bool(entry.get("active")) else "Inactiva"
+    captured_label = f"{captured_predictions}/{total_matches} predicciones"
 
     markup = f"""
     <div class="qm-entry-card {selected_class}">
@@ -48,6 +51,7 @@ def _entry_card(
         </div>
         <div class="qm-entry-points">{points} pts</div>
         <div class="qm-entry-meta">
+            <span>{escape(captured_label)}</span>
             <span>{escape(paid_label)}</span>
             <span>{escape(active_label)}</span>
         </div>
@@ -67,11 +71,15 @@ entries = user_entries(data, user["user_id"])
 rankings = build_rankings(entries, data[USERS], data[PREDICTIONS], data[RESULTS])
 
 points_by_entry = {}
+captured_by_entry = {}
 if not rankings.empty:
     points_by_entry = rankings.set_index("entry_id")["total_points"].to_dict()
+    captured_by_entry = rankings.set_index("entry_id")["predictions_count"].to_dict()
 
 total_entries = len(entries)
 total_points = int(sum(as_int(value, 0) for value in points_by_entry.values()))
+total_matches = len(data[MATCHES])
+total_captured = int(sum(as_int(value, 0) for value in captured_by_entry.values()))
 
 current_entry_id = st.session_state.get("active_entry_id")
 active_entry_name = "Sin quiniela activa"
@@ -91,8 +99,8 @@ if not entries.empty:
 
 page_hero(
     "Mis quinielas",
-    "Administra tus entradas, revisa tus puntos y elige tu quiniela activa.",
-    eyebrow="Gestión personal",
+    "Consulta tus entradas, revisa tus puntos y el avance de tus predicciones.",
+    eyebrow="Resumen personal",
     pills=[
         f"{clean_text(user.get('nickname')) or 'Usuario'}",
         f"{total_entries} quinielas",
@@ -101,77 +109,85 @@ page_hero(
 )
 
 
-section_header("Tu contexto", "Resumen rápido de tus entradas en esta quiniela.")
-
-context_cols = st.columns(4)
-
-with context_cols[0]:
-    metric_card("Nickname", clean_text(user.get("nickname")) or "-", "Usuario actual", "green")
-
-with context_cols[1]:
-    metric_card("Total quinielas", str(total_entries), "Entradas activas", "gold")
-
-with context_cols[2]:
-    metric_card("Quiniela activa", active_entry_name, "Seleccionada", "navy")
-
-with context_cols[3]:
-    metric_card("Puntos totales", str(total_points), "Suma de tus quinielas", "green")
-
-
 section_header(
-    "Crear otra quiniela",
-    "Cada quiniela participa de forma independiente en la tabla general.",
+    "Resumen de tus entradas",
+    "Vista rápida de tus quinielas, puntos acumulados y avance de captura.",
 )
 
-info_card(
-    "Nueva entrada",
-    "Al crearla se agrega a tus quinielas y queda seleccionada como activa.",
-    icon="🎟️",
-    accent="gold",
+st.markdown(
+    _clean_html(
+        f"""
+        <section class="qm-status-panel qm-status-panel-four">
+            <div class="qm-status-panel-item">
+                <span class="qm-status-panel-icon">🎟️</span>
+                <span>
+                    <strong>{total_entries}</strong>
+                    <small>Total de quinielas</small>
+                </span>
+            </div>
+            <div class="qm-status-panel-item">
+                <span class="qm-status-panel-icon">✅</span>
+                <span>
+                    <strong>{escape(active_entry_name)}</strong>
+                    <small>Quiniela activa</small>
+                </span>
+            </div>
+            <div class="qm-status-panel-item qm-status-panel-money">
+                <span class="qm-status-panel-icon">🏆</span>
+                <span>
+                    <strong>{total_points} pts</strong>
+                    <small>Puntos totales</small>
+                </span>
+            </div>
+            <div class="qm-status-panel-item">
+                <span class="qm-status-panel-icon">⚽</span>
+                <span>
+                    <strong>{total_captured}</strong>
+                    <small>Predicciones capturadas</small>
+                </span>
+            </div>
+        </section>
+        """
+    ),
+    unsafe_allow_html=True,
 )
 
-with st.form("create_entry"):
-    default_number = len(entries) + 1
-    default_name = f"{user.get('nickname')} #{default_number}"
 
-    entry_name = st.text_input("Nombre de la nueva quiniela", value=default_name)
-    submitted = st.form_submit_button("Crear quiniela", use_container_width=True)
-
-if submitted:
-    if not entry_name.strip():
-        st.error("Escribe un nombre para la quiniela.")
-    else:
-        try:
-            entry = repo.create_entry(user["user_id"], entry_name)
-            st.session_state["active_entry_id"] = entry["entry_id"]
-            st.success("Quiniela creada.")
-            st.rerun()
-        except ValueError as exc:
-            st.error(str(exc))
-
-
-section_header("Tus quinielas", "Elige cuál usarás para capturar o revisar predicciones.")
+section_header("Tus quinielas", "Elige cuál quieres revisar en detalle.")
 
 if entries.empty:
     empty_state(
         "Aún no tienes quinielas",
-        "Crea tu primera quiniela para empezar a capturar predicciones.",
+        "Ve a Empieza a jugar para crear tu primera quiniela y capturar predicciones.",
         icon="🎟️",
     )
 else:
-    labels = [
-        f"{row['entry_name']} · {int(points_by_entry.get(row['entry_id'], 0))} pts"
-        for _, row in entries.iterrows()
-    ]
-
     ids = entries["entry_id"].tolist()
-    current = st.session_state.get("active_entry_id")
-    index = ids.index(current) if current in ids else 0
+    review_entry_id = st.session_state.get("review_entry_id")
 
-    selected = st.radio("Selecciona tu quiniela activa", labels, index=index)
-    st.session_state["active_entry_id"] = ids[labels.index(selected)]
+    if review_entry_id not in ids:
+        review_entry_id = current_entry_id if current_entry_id in ids else ids[0]
 
-    selected_row = entries.iloc[labels.index(selected)]
+    index = ids.index(review_entry_id) if review_entry_id in ids else 0
+
+    def _entry_radio_label(entry_id: str) -> str:
+        """Return the review selector label for one entry."""
+        row = entries[entries["entry_id"] == entry_id].iloc[0]
+        entry_name = clean_text(row.get("entry_name")) or "Quiniela"
+        points = int(points_by_entry.get(entry_id, 0))
+        captured = int(captured_by_entry.get(entry_id, 0))
+        active_suffix = " · activa" if entry_id == current_entry_id else ""
+        return f"{entry_name} · {points} pts · {captured}/{total_matches} predicciones{active_suffix}"
+
+    selected_entry_id = st.radio(
+        "Selecciona la quiniela que quieres revisar",
+        ids,
+        index=index,
+        format_func=_entry_radio_label,
+    )
+    st.session_state["review_entry_id"] = selected_entry_id
+
+    selected_row = entries[entries["entry_id"] == selected_entry_id].iloc[0]
     selected_name = clean_text(selected_row.get("entry_name")) or "Quiniela"
 
     for start in range(0, len(entries), 3):
@@ -184,11 +200,14 @@ else:
                 _entry_card(
                     entry_row.to_dict(),
                     int(points_by_entry.get(entry_id, 0)),
-                    entry_id == st.session_state["active_entry_id"],
+                    int(captured_by_entry.get(entry_id, 0)),
+                    total_matches,
+                    entry_id == selected_entry_id,
                 )
 
     display = entries.copy()
     display["Puntos"] = display["entry_id"].map(points_by_entry).fillna(0).astype(int)
+    display["Predicciones"] = display["entry_id"].map(captured_by_entry).fillna(0).astype(int)
     display["Pagada"] = display["paid"].apply(lambda value: "Sí" if as_bool(value) else "No")
     display["Activa"] = display["active"].apply(lambda value: "Sí" if as_bool(value) else "No")
 
@@ -200,7 +219,7 @@ else:
     )
 
     st.dataframe(
-        display[["Quiniela", "Puntos", "Creada", "Pagada", "Activa"]],
+        display[["Quiniela", "Puntos", "Predicciones", "Creada", "Pagada", "Activa"]],
         hide_index=True,
         use_container_width=True,
     )
@@ -213,7 +232,7 @@ else:
     summary = build_entry_prediction_summary(
         data[MATCHES],
         data[PREDICTIONS],
-        st.session_state["active_entry_id"],
+        selected_entry_id,
     )
 
     if summary.empty:
@@ -228,19 +247,43 @@ else:
         pending_predictions = max(total_matches - captured_predictions, 0)
         selected_points = int(summary["points"].apply(lambda value: as_int(value, 0)).sum())
 
-        summary_cols = st.columns(4)
-
-        with summary_cols[0]:
-            metric_card("Total partidos", str(total_matches), "Calendario disponible", "navy")
-
-        with summary_cols[1]:
-            metric_card("Capturadas", str(captured_predictions), "Predicciones guardadas", "green")
-
-        with summary_cols[2]:
-            metric_card("Pendientes", str(pending_predictions), "Por capturar", "red")
-
-        with summary_cols[3]:
-            metric_card("Puntos", str(selected_points), "Quiniela seleccionada", "gold")
+        st.markdown(
+            _clean_html(
+                f"""
+                <section class="qm-status-panel qm-status-panel-four">
+                    <div class="qm-status-panel-item">
+                        <span class="qm-status-panel-icon">⚽</span>
+                        <span>
+                            <strong>{total_matches}</strong>
+                            <small>Total partidos</small>
+                        </span>
+                    </div>
+                    <div class="qm-status-panel-item">
+                        <span class="qm-status-panel-icon">✅</span>
+                        <span>
+                            <strong>{captured_predictions}</strong>
+                            <small>Predicciones capturadas</small>
+                        </span>
+                    </div>
+                    <div class="qm-status-panel-item">
+                        <span class="qm-status-panel-icon">⏳</span>
+                        <span>
+                            <strong>{pending_predictions}</strong>
+                            <small>Pendientes</small>
+                        </span>
+                    </div>
+                    <div class="qm-status-panel-item qm-status-panel-money">
+                        <span class="qm-status-panel-icon">🏆</span>
+                        <span>
+                            <strong>{selected_points} pts</strong>
+                            <small>Puntos de esta quiniela</small>
+                        </span>
+                    </div>
+                </section>
+                """
+            ),
+            unsafe_allow_html=True,
+        )
 
         if captured_predictions == 0:
             info_card(
@@ -250,14 +293,19 @@ else:
                 accent="gold",
             )
 
-        display = summary.rename(
+        display = summary.copy()
+        display["Partido"] = display.apply(
+            lambda row: (
+                f"{clean_text(row.get('home_team')) or '-'}"
+                f" vs {clean_text(row.get('away_team')) or '-'}"
+            ),
+            axis=1,
+        )
+        display = display.rename(
             columns={
                 "match_date": "Fecha",
-                "group": "Grupo",
-                "home_team": "Local",
-                "away_team": "Visitante",
                 "selected_result_label": "Quién gana",
-                "prediction": "Predicción",
+                "prediction": "Marcador capturado",
                 "capture_status": "Estado",
                 "points": "Puntos",
             }
@@ -267,11 +315,9 @@ else:
             display[
                 [
                     "Fecha",
-                    "Grupo",
-                    "Local",
-                    "Visitante",
+                    "Partido",
+                    "Marcador capturado",
                     "Quién gana",
-                    "Predicción",
                     "Estado",
                     "Puntos",
                 ]

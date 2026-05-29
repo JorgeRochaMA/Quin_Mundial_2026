@@ -86,12 +86,22 @@ section_header(
     "Puedes crear una nueva entrada o elegir cuál quieres llenar ahora.",
 )
 
-with st.form("start_create_entry"):
-    default_number = len(entries) + 1
-    default_name = f"{user.get('nickname')} #{default_number}"
+create_col, select_col = st.columns(2)
 
-    entry_name = st.text_input("Nombre de la nueva quiniela", value=default_name)
-    submitted = st.form_submit_button("Crear quiniela", use_container_width=True)
+with create_col:
+    info_card(
+        "Crear nueva quiniela",
+        "Puedes crear varias quinielas si quieres jugar con diferentes estrategias.",
+        icon="🎟️",
+        accent="gold",
+    )
+
+    with st.form("start_create_entry"):
+        default_number = len(entries) + 1
+        default_name = f"{user.get('nickname')} #{default_number}"
+
+        entry_name = st.text_input("Nombre de la nueva quiniela", value=default_name)
+        submitted = st.form_submit_button("Crear quiniela", use_container_width=True)
 
 if submitted:
     if not entry_name.strip():
@@ -105,24 +115,33 @@ if submitted:
         except ValueError as exc:
             st.error(str(exc))
 
-if entries.empty:
-    empty_state(
-        "Aún no tienes quinielas",
-        "Crea tu primera quiniela para empezar a capturar predicciones.",
-        icon="🎟️",
+with select_col:
+    info_card(
+        "Quiniela activa",
+        f"Estás llenando: {active_entry_name}",
+        icon="✅",
+        accent="green",
     )
-    st.stop()
 
-labels = [
-    f"{row['entry_name']} · {int(points_by_entry.get(row['entry_id'], 0))} pts"
-    for _, row in entries.iterrows()
-]
-ids = entries["entry_id"].tolist()
-current = st.session_state.get("active_entry_id")
-index = ids.index(current) if current in ids else 0
+    if entries.empty:
+        empty_state(
+            "Aún no tienes quinielas",
+            "Crea tu primera quiniela para empezar a capturar predicciones.",
+            icon="🎟️",
+        )
+        st.stop()
 
-selected = st.radio("Selecciona cuál quiniela quieres llenar", labels, index=index)
-st.session_state["active_entry_id"] = ids[labels.index(selected)]
+    labels = [
+        f"{row['entry_name']} · {int(points_by_entry.get(row['entry_id'], 0))} pts"
+        for _, row in entries.iterrows()
+    ]
+    ids = entries["entry_id"].tolist()
+    current = st.session_state.get("active_entry_id")
+    index = ids.index(current) if current in ids else 0
+
+    selected = st.radio("Selecciona cuál quiniela quieres llenar", labels, index=index)
+    st.caption("La quiniela seleccionada será la que uses para capturar predicciones.")
+    st.session_state["active_entry_id"] = ids[labels.index(selected)]
 
 selected_row = entries.iloc[labels.index(selected)].to_dict()
 selected_name = clean_text(selected_row.get("entry_name")) or "Quiniela"

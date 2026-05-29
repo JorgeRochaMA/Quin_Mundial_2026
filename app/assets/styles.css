@@ -502,6 +502,22 @@ div[data-testid="stDataFrame"] [role="gridcell"] {
     color: var(--qm-green);
 }
 
+.qm-status-panel-four {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.qm-status-panel-four .qm-status-panel-item {
+    border-bottom: 0;
+}
+
+.qm-status-panel-four .qm-status-panel-item:nth-child(3n) {
+    border-right: 1px solid rgba(220, 229, 236, 0.76);
+}
+
+.qm-status-panel-four .qm-status-panel-item:nth-child(4n) {
+    border-right: 0;
+}
+
 .qm-compact-panel {
     background: var(--qm-panel-strong);
     border: 1px solid rgba(220, 229, 236, 0.95);
@@ -908,11 +924,23 @@ hr {
         margin-bottom: 1rem;
     }
 
+    .qm-status-panel-four {
+        grid-template-columns: 1fr;
+    }
+
     .qm-status-panel-item {
         border-right: 0;
         gap: 0.6rem;
         justify-content: space-between;
         padding: 0.58rem 0.72rem;
+    }
+
+    .qm-status-panel-four .qm-status-panel-item:nth-child(3n) {
+        border-right: 0;
+    }
+
+    .qm-status-panel-four .qm-status-panel-item {
+        border-bottom: 1px solid rgba(220, 229, 236, 0.76);
     }
 
     .qm-status-panel-item:nth-last-child(-n + 3) {
