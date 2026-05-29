@@ -279,15 +279,9 @@ def _render_match_card(
             """
         )
 
-        score_cols = st.columns([1.4, 0.8, 0.45, 0.8, 1.4])
+        score_cols = st.columns([1, 0.35, 1])
 
         with score_cols[0]:
-            st.markdown(
-                f"<div class='qm-score-side-label'>{escape(home_team)}</div>",
-                unsafe_allow_html=True,
-            )
-
-        with score_cols[1]:
             home_score_text = st.text_input(
                 "Goles local",
                 value=_render_score_input_value(default_home),
@@ -297,10 +291,10 @@ def _render_match_card(
                 max_chars=2,
             )
 
-        with score_cols[2]:
+        with score_cols[1]:
             st.markdown("<div class='qm-score-separator'>VS</div>", unsafe_allow_html=True)
 
-        with score_cols[3]:
+        with score_cols[2]:
             away_score_text = st.text_input(
                 "Goles visitante",
                 value=_render_score_input_value(default_away),
@@ -308,12 +302,6 @@ def _render_match_card(
                 key=f"away_score_{match_id}",
                 label_visibility="collapsed",
                 max_chars=2,
-            )
-
-        with score_cols[4]:
-            st.markdown(
-                f"<div class='qm-score-side-label qm-score-side-label-right'>{escape(away_team)}</div>",
-                unsafe_allow_html=True,
             )
 
         parsed_home = _parse_goal_input(home_score_text)
