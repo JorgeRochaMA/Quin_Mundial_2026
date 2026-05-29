@@ -65,6 +65,13 @@ def render_sidebar(data: dict[str, pd.DataFrame] | None = None) -> None:
     """Render session details, entry selector, and logout."""
     user = current_user()
     with st.sidebar:
+        if user:
+            st.page_link("pages/0_Empieza_A_Jugar.py", label="Empieza A Jugar")
+            st.page_link("pages/1_Dashboard.py", label="Dashboard")
+            st.page_link("pages/2_Mis_Entradas.py", label="Mis Entradas")
+            st.page_link("pages/4_Estadisticas.py", label="Estadísticas")
+            st.page_link("pages/5_Admin.py", label="Admin")
+
         st.markdown(
             """
             <div class="qm-brand">
