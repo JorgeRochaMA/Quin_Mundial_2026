@@ -90,6 +90,7 @@ class DemoPoolRepository:
         full_name: str = "",
         email: str = "",
         role: str = ROLE_USER,
+        password_hash: str = "",
     ) -> dict[str, Any]:
         """Create a demo user row."""
         nickname = validate_display_text(nickname, "nickname", 40)
@@ -100,9 +101,21 @@ class DemoPoolRepository:
             "email": clean_text(email)[:120],
             "role": role,
             "active": True,
+            "password_hash": clean_text(password_hash),
         }
         self._append(USERS, user)
         return user
+
+    def update_user_password_hash(self, user_id: str, password_hash: str) -> None:
+        """Set or replace the stored password hash for a demo user."""
+        user_id = validate_resource_id(user_id, "user_id")
+        users = self._df(USERS)
+        match = users[users["user_id"] == user_id]
+        if match.empty:
+            return
+        user = match.iloc[0].to_dict()
+        user["password_hash"] = clean_text(password_hash)
+        self._upsert(USERS, user, ["user_id"])
 
     def update_user_role(self, user_id: str, role: str) -> None:
         """Promote or demote a demo user."""
@@ -329,6 +342,7 @@ def _build_seed_data() -> dict[str, pd.DataFrame]:
                     "email": "george@example.com",
                     "role": ROLE_USER,
                     "active": True,
+                    "password_hash": "",
                 },
                 {
                     "user_id": "u_demo_admin",
@@ -337,6 +351,7 @@ def _build_seed_data() -> dict[str, pd.DataFrame]:
                     "email": "admin@example.com",
                     "role": ROLE_ADMIN,
                     "active": True,
+                    "password_hash": "",
                 },
             ],
             columns=SHEET_COLUMNS[USERS],

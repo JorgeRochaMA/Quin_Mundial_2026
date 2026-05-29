@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+from textwrap import dedent
+
 import streamlit as st
 
 from components.layout import configure_page, current_user, render_sidebar
-from components.ui import info_card, metric_card, page_hero, section_header
+from components.ui import page_hero, section_header
 from services.auth import AuthError, login_or_register
 from services.runtime import get_repository_or_stop
 
@@ -27,39 +29,68 @@ page_hero(
     pills=["72 partidos", "$200 MXN", "Máximo 5 pts", "Ranking en vivo"],
 )
 
-section_header("Cómo funciona", "Cuatro pasos para entrar y competir en la quiniela.")
-how_cols = st.columns(4)
-how_cards = [
-    ("1. Entra", "Usa tu nickname y código de acceso.", "🎟️", "green"),
-    ("2. Crea tu quiniela", "Puedes tener una o varias entradas activas.", "🧾", "gold"),
-    ("3. Predice", "Captura marcadores antes del bloqueo.", "⚽", "navy"),
-    ("4. Compite", "La tabla se actualiza con resultados oficiales.", "🏆", "green"),
-]
-for column, (title, body, icon, accent) in zip(how_cols, how_cards):
-    with column:
-        info_card(title, body, icon=icon, accent=accent)
+section_header("Cómo funciona", "Lo esencial para entrar y empezar.")
+st.markdown(
+    dedent(
+        """
+    <section class="qm-compact-panel qm-rules-panel">
+        <div class="qm-compact-panel-item">
+            <span class="qm-status-panel-icon">🎟️</span>
+            <span><strong>Entra</strong><small>Con tu nickname y código</small></span>
+        </div>
+        <div class="qm-compact-panel-item">
+            <span class="qm-status-panel-icon">🧾</span>
+            <span><strong>Crea quinielas</strong><small>Una o varias entradas</small></span>
+        </div>
+        <div class="qm-compact-panel-item">
+            <span class="qm-status-panel-icon">⚽</span>
+            <span><strong>Predice</strong><small>Captura tus marcadores</small></span>
+        </div>
+        <div class="qm-compact-panel-item">
+            <span class="qm-status-panel-icon">🏆</span>
+            <span><strong>Compite</strong><small>En el ranking general</small></span>
+        </div>
+    </section>
+    """
+    ).strip(),
+    unsafe_allow_html=True,
+)
 
-section_header("Reglas rápidas", "Puntaje por partido capturado.")
-rule_cols = st.columns(4)
-rules = [
-    ("3 pts", "Aciertas ganador, perdedor o empate.", "Resultado correcto", "gold"),
-    ("+2 pts", "Bono por marcador exacto.", "Extra", "green"),
-    ("5 pts", "Máximo por partido.", "Tope", "navy"),
-    ("0 pts", "Predicción incorrecta.", "Sin puntos", "red"),
-]
-for column, (value, caption, label, accent) in zip(rule_cols, rules):
-    with column:
-        metric_card(label, value, caption, accent)
+section_header("Puntuación", "Reglas rápidas por partido.")
+st.markdown(
+    dedent(
+        """
+    <section class="qm-compact-panel qm-rules-panel">
+        <div class="qm-compact-panel-item">
+            <span class="qm-status-panel-icon">✅</span>
+            <span><strong>3 pts</strong><small>Resultado correcto</small></span>
+        </div>
+        <div class="qm-compact-panel-item">
+            <span class="qm-status-panel-icon">🎯</span>
+            <span><strong>+2 pts</strong><small>Marcador exacto</small></span>
+        </div>
+        <div class="qm-compact-panel-item">
+            <span class="qm-status-panel-icon">🏆</span>
+            <span><strong>5 pts</strong><small>Máximo por partido</small></span>
+        </div>
+        <div class="qm-compact-panel-item">
+            <span class="qm-status-panel-icon">❌</span>
+            <span><strong>0 pts</strong><small>Incorrecto</small></span>
+        </div>
+    </section>
+    """
+    ).strip(),
+    unsafe_allow_html=True,
+)
 
 section_header(
     "Ingresar o registrarme",
-    "Si es tu primera vez, escribe tu nickname, código y opcionalmente tu nombre completo.",
+    "Si es tu primera vez, escribe tu nickname, código y define tu contraseña personal.",
 )
 with st.form("login_form"):
     nickname = st.text_input("Nickname", placeholder="Ej. George")
     access_code = st.text_input("Código de acceso", type="password")
-    full_name = st.text_input("Nombre completo", placeholder="Opcional si ya te registraste")
-    email = st.text_input("Email", placeholder="Opcional")
+    password = st.text_input("Contraseña personal", type="password")
     submitted = st.form_submit_button("Entrar a la quiniela", use_container_width=True)
 
 if submitted:
@@ -68,8 +99,7 @@ if submitted:
             repo,
             nickname=nickname,
             access_code=access_code,
-            full_name=full_name,
-            email=email,
+            password=password,
         )
         st.session_state["user"] = user
         st.success("Listo, ya estás dentro.")

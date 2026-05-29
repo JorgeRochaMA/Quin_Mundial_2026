@@ -22,7 +22,7 @@ RESULT_VALUES = [HOME_WIN, DRAW, AWAY_WIN]
 
 SHEET_COLUMNS = {
     CONFIG: ["key", "value"],
-    USERS: ["user_id", "full_name", "nickname", "email", "role", "active"],
+    USERS: ["user_id", "full_name", "nickname", "email", "role", "active", "password_hash"],
     ENTRIES: [
         "entry_id",
         "user_id",

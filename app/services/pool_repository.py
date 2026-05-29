@@ -144,6 +144,7 @@ class PoolRepository:
         full_name: str = "",
         email: str = "",
         role: str = ROLE_USER,
+        password_hash: str = "",
     ) -> dict[str, Any]:
         """Create a user row and return the new user."""
         nickname = validate_display_text(nickname, "nickname", 40)
@@ -155,12 +156,33 @@ class PoolRepository:
             "email": clean_text(email)[:120],
             "role": role,
             "active": True,
+            "password_hash": clean_text(password_hash),
         }
 
         self.sheets.append_record(USERS, user, SHEET_COLUMNS[USERS])
         self._invalidate(USERS)
 
         return user
+
+    def update_user_password_hash(self, user_id: str, password_hash: str) -> None:
+        """Set or replace the stored password hash for a user."""
+        user_id = validate_resource_id(user_id, "user_id")
+
+        users = self._read_sheet(USERS)
+
+        if users.empty:
+            return
+
+        match = users[users["user_id"] == user_id]
+
+        if match.empty:
+            return
+
+        user = match.iloc[0].to_dict()
+        user["password_hash"] = clean_text(password_hash)
+
+        self.sheets.upsert_record(USERS, user, SHEET_COLUMNS[USERS], ["user_id"])
+        self._invalidate(USERS)
 
     def update_user_role(self, user_id: str, role: str) -> None:
         """Promote or demote a user role."""
