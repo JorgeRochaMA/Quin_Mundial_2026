@@ -746,6 +746,91 @@ div[data-testid="stDataFrame"] [role="gridcell"] {
     padding: 0.3rem 0.5rem;
 }
 
+.qm-entry-review-list {
+    background: var(--qm-panel-strong);
+    border: 1px solid rgba(220, 229, 236, 0.95);
+    border-top: 4px solid var(--qm-green-2);
+    border-radius: 8px;
+    box-shadow: var(--qm-shadow);
+    display: grid;
+    margin: 0.55rem 0 1.15rem;
+    overflow: hidden;
+}
+
+.qm-entry-review-row {
+    align-items: center;
+    border-bottom: 1px solid rgba(220, 229, 236, 0.76);
+    display: grid;
+    gap: 0.85rem;
+    grid-template-columns: minmax(10rem, 1fr) 5.2rem 7.2rem 8.3rem;
+    min-width: 0;
+    padding: 0.72rem 0.85rem;
+}
+
+.qm-entry-review-row:last-child {
+    border-bottom: 0;
+}
+
+.qm-entry-review-row-selected {
+    background: linear-gradient(90deg, rgba(214, 165, 51, 0.16), rgba(255, 255, 255, 0));
+}
+
+.qm-entry-review-main {
+    min-width: 0;
+}
+
+.qm-entry-review-name {
+    color: var(--qm-navy);
+    font-size: 0.98rem;
+    font-weight: 920;
+    line-height: 1.15;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.qm-entry-review-date {
+    color: var(--qm-muted);
+    font-size: 0.76rem;
+    font-weight: 680;
+    margin-top: 0.15rem;
+}
+
+.qm-entry-review-metric {
+    min-width: 0;
+}
+
+.qm-entry-review-metric strong {
+    color: var(--qm-navy);
+    display: block;
+    font-size: 1rem;
+    font-weight: 950;
+    line-height: 1.05;
+}
+
+.qm-entry-review-metric small {
+    color: var(--qm-muted);
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 780;
+    line-height: 1.1;
+    margin-top: 0.14rem;
+}
+
+.qm-entry-review-status {
+    align-items: flex-end;
+    display: flex;
+    flex-direction: column;
+    gap: 0.24rem;
+}
+
+.qm-entry-review-selected {
+    color: var(--qm-gold-dark);
+    font-size: 0.7rem;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
 .qm-section-header {
     margin: 1.4rem 0 0.7rem;
 }
@@ -976,6 +1061,34 @@ hr {
         font-size: 0.76rem;
         margin-top: 0;
         order: 1;
+    }
+
+    .qm-entry-review-row {
+        gap: 0.5rem;
+        grid-template-columns: minmax(0, 1fr) auto;
+        padding: 0.62rem 0.72rem;
+    }
+
+    .qm-entry-review-main {
+        grid-column: 1 / -1;
+    }
+
+    .qm-entry-review-name {
+        white-space: normal;
+    }
+
+    .qm-entry-review-metric strong {
+        font-size: 0.95rem;
+    }
+
+    .qm-entry-review-metric small {
+        font-size: 0.7rem;
+    }
+
+    .qm-entry-review-status {
+        align-items: flex-end;
+        grid-column: 2;
+        grid-row: 2 / span 2;
     }
 
     .qm-rules-panel,

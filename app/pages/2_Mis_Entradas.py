@@ -11,7 +11,7 @@ from components.layout import configure_page, render_sidebar, require_login, use
 from components.ui import empty_state, info_card, page_hero, section_header
 from services.runtime import get_repository_or_stop
 from utils.constants import MATCHES, PREDICTIONS, RESULTS, USERS
-from utils.data import as_bool, as_int, clean_text
+from utils.data import as_int, clean_text
 from utils.predictions import build_entry_prediction_summary
 from utils.rankings import build_rankings
 
@@ -25,40 +25,63 @@ def _clean_html(markup: str) -> str:
     )
 
 
-def _entry_card(
-    entry: dict[str, object],
-    points: int,
-    captured_predictions: int,
+def _render_entry_review_list(
+    entries,
+    points_by_entry: dict[str, object],
+    captured_by_entry: dict[str, object],
     total_matches: int,
-    is_selected: bool,
+    selected_entry_id: str,
+    active_entry_id: str | None,
 ) -> None:
-    """Render one entry review card."""
-    selected_class = "qm-entry-selected" if is_selected else ""
-    selected_label = "Revisando" if is_selected else "Disponible"
-    selected_accent = "green" if is_selected else "navy"
-    paid_label = "Pagada" if as_bool(entry.get("paid")) else "Pago pendiente"
-    active_label = "Activa" if as_bool(entry.get("active")) else "Inactiva"
-    captured_label = f"{captured_predictions}/{total_matches} predicciones"
+    """Render a compact visual list for reviewing entries."""
+    rows = []
 
-    markup = f"""
-    <div class="qm-entry-card {selected_class}">
-        <div class="qm-entry-card-top">
-            <div>
-                <div class="qm-entry-name">{escape(clean_text(entry.get("entry_name")) or "Quiniela")}</div>
-                <div class="qm-entry-date">Creada: {escape(clean_text(entry.get("created_at")) or "-")}</div>
+    for _, entry in entries.iterrows():
+        entry_id = clean_text(entry.get("entry_id"))
+        entry_name = clean_text(entry.get("entry_name")) or "Quiniela"
+        created_at = clean_text(entry.get("created_at")) or "-"
+        points = int(points_by_entry.get(entry_id, 0))
+        captured = int(captured_by_entry.get(entry_id, 0))
+        is_selected = entry_id == selected_entry_id
+        is_active = entry_id == active_entry_id
+        selected_class = " qm-entry-review-row-selected" if is_selected else ""
+        selected_label = '<span class="qm-entry-review-selected">En revisión</span>' if is_selected else ""
+        status_label = "Activa" if is_active else "Disponible"
+        status_accent = "green" if is_active else "navy"
+
+        rows.append(
+            f"""
+            <div class="qm-entry-review-row{selected_class}">
+                <div class="qm-entry-review-main">
+                    <div class="qm-entry-review-name">{escape(entry_name)}</div>
+                    <div class="qm-entry-review-date">Creada: {escape(created_at)}</div>
+                </div>
+                <div class="qm-entry-review-metric">
+                    <strong>{points}</strong>
+                    <small>pts</small>
+                </div>
+                <div class="qm-entry-review-metric">
+                    <strong>{captured}/{total_matches}</strong>
+                    <small>predicciones</small>
+                </div>
+                <div class="qm-entry-review-status">
+                    <span class="qm-status-pill qm-accent-{status_accent}">{escape(status_label)}</span>
+                    {selected_label}
+                </div>
             </div>
-            <span class="qm-status-pill qm-accent-{selected_accent}">{escape(selected_label)}</span>
-        </div>
-        <div class="qm-entry-points">{points} pts</div>
-        <div class="qm-entry-meta">
-            <span>{escape(captured_label)}</span>
-            <span>{escape(paid_label)}</span>
-            <span>{escape(active_label)}</span>
-        </div>
-    </div>
-    """
+            """
+        )
 
-    st.markdown(_clean_html(markup), unsafe_allow_html=True)
+    st.markdown(
+        _clean_html(
+            f"""
+            <section class="qm-entry-review-list">
+                {''.join(rows)}
+            </section>
+            """
+        ),
+        unsafe_allow_html=True,
+    )
 
 
 configure_page("Mis quinielas")
@@ -170,7 +193,7 @@ else:
 
     index = ids.index(review_entry_id) if review_entry_id in ids else 0
 
-    def _entry_radio_label(entry_id: str) -> str:
+    def _entry_select_label(entry_id: str) -> str:
         """Return the review selector label for one entry."""
         row = entries[entries["entry_id"] == entry_id].iloc[0]
         entry_name = clean_text(row.get("entry_name")) or "Quiniela"
@@ -179,49 +202,24 @@ else:
         active_suffix = " · activa" if entry_id == current_entry_id else ""
         return f"{entry_name} · {points} pts · {captured}/{total_matches} predicciones{active_suffix}"
 
-    selected_entry_id = st.radio(
+    selected_entry_id = st.selectbox(
         "Selecciona la quiniela que quieres revisar",
         ids,
         index=index,
-        format_func=_entry_radio_label,
+        format_func=_entry_select_label,
     )
     st.session_state["review_entry_id"] = selected_entry_id
 
     selected_row = entries[entries["entry_id"] == selected_entry_id].iloc[0]
     selected_name = clean_text(selected_row.get("entry_name")) or "Quiniela"
 
-    for start in range(0, len(entries), 3):
-        columns = st.columns(3)
-
-        for column, (_, entry_row) in zip(columns, entries.iloc[start : start + 3].iterrows()):
-            entry_id = entry_row.get("entry_id")
-
-            with column:
-                _entry_card(
-                    entry_row.to_dict(),
-                    int(points_by_entry.get(entry_id, 0)),
-                    int(captured_by_entry.get(entry_id, 0)),
-                    total_matches,
-                    entry_id == selected_entry_id,
-                )
-
-    display = entries.copy()
-    display["Puntos"] = display["entry_id"].map(points_by_entry).fillna(0).astype(int)
-    display["Predicciones"] = display["entry_id"].map(captured_by_entry).fillna(0).astype(int)
-    display["Pagada"] = display["paid"].apply(lambda value: "Sí" if as_bool(value) else "No")
-    display["Activa"] = display["active"].apply(lambda value: "Sí" if as_bool(value) else "No")
-
-    display = display.rename(
-        columns={
-            "entry_name": "Quiniela",
-            "created_at": "Creada",
-        }
-    )
-
-    st.dataframe(
-        display[["Quiniela", "Puntos", "Predicciones", "Creada", "Pagada", "Activa"]],
-        hide_index=True,
-        use_container_width=True,
+    _render_entry_review_list(
+        entries,
+        points_by_entry,
+        captured_by_entry,
+        total_matches,
+        selected_entry_id,
+        current_entry_id,
     )
 
     section_header(
