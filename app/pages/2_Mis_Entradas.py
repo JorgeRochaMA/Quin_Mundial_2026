@@ -90,9 +90,6 @@ repo = get_repository_or_stop()
 data = repo.load_data()
 render_sidebar(data)
 
-if st.session_state.pop("entry_delete_success", False):
-    st.success("Quiniela eliminada correctamente.")
-
 entries = user_entries(data, user["user_id"])
 rankings = build_rankings(entries, data[USERS], data[PREDICTIONS], data[RESULTS])
 
@@ -216,9 +213,6 @@ else:
 
     selected_row = entries[entries["entry_id"] == selected_entry_id].iloc[0]
     selected_name = clean_text(selected_row.get("entry_name")) or "Quiniela"
-    selected_points = int(points_by_entry.get(selected_entry_id, 0))
-    selected_captured = int(captured_by_entry.get(selected_entry_id, 0))
-    selected_status = "Activa" if selected_entry_id == current_entry_id else "Disponible"
 
     _render_entry_review_list(
         entries,
@@ -228,63 +222,6 @@ else:
         selected_entry_id,
         current_entry_id,
     )
-
-    section_header("Eliminar quiniela", "Esta acción borra la quiniela seleccionada y sus predicciones.")
-    info_card(
-        selected_name,
-        (
-            f"{selected_captured}/{total_matches} predicciones capturadas · "
-            f"{selected_points} pts · {selected_status}"
-        ),
-        icon="🗑️",
-        accent="red",
-    )
-
-    confirm_delete = st.checkbox(
-        "Confirmo que quiero eliminar esta quiniela y sus predicciones.",
-        key=f"confirm_delete_user_entry_{selected_entry_id}",
-    )
-
-    if st.button(
-        "Eliminar quiniela",
-        use_container_width=True,
-        disabled=not confirm_delete,
-        type="secondary",
-    ):
-        try:
-            selected_owner_id = clean_text(selected_row.get("user_id"))
-
-            if selected_owner_id != clean_text(user.get("user_id")):
-                st.error("No puedes eliminar una quiniela de otro usuario.")
-                st.stop()
-
-            deleted = repo.delete_entry(selected_entry_id)
-
-            if not deleted:
-                st.error("No se pudo eliminar la quiniela seleccionada.")
-                st.stop()
-
-            remaining_entries = entries[entries["entry_id"] != selected_entry_id]
-            remaining_ids = remaining_entries["entry_id"].tolist()
-
-            if current_entry_id == selected_entry_id:
-                if remaining_ids:
-                    st.session_state["active_entry_id"] = remaining_ids[0]
-                else:
-                    st.session_state.pop("active_entry_id", None)
-
-            if remaining_ids:
-                next_review_id = st.session_state.get("active_entry_id")
-                if next_review_id not in remaining_ids:
-                    next_review_id = remaining_ids[0]
-                st.session_state["review_entry_id"] = next_review_id
-            else:
-                st.session_state.pop("review_entry_id", None)
-
-            st.session_state["entry_delete_success"] = True
-            st.rerun()
-        except ValueError as exc:
-            st.error(str(exc))
 
     section_header(
         f"Predicciones de {selected_name}",

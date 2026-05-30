@@ -22,6 +22,9 @@ data = repo.load_data()
 config = repo.get_config()
 render_sidebar(data)
 
+if st.session_state.pop("entry_delete_success", False):
+    st.success("Quiniela eliminada correctamente.")
+
 entries = user_entries(data, user["user_id"])
 rankings = build_rankings(entries, data[USERS], data[PREDICTIONS], data[RESULTS])
 
@@ -153,6 +156,51 @@ if not selected_predictions.empty:
         selected_predictions[selected_predictions["entry_id"] == selected_entry_id]["match_id"].nunique()
     )
 total_matches = len(data[MATCHES])
+
+with select_col:
+    st.markdown("---")
+    st.caption(
+        f"{selected_name} · {int(points_by_entry.get(selected_entry_id, 0))} pts · "
+        f"{captured_predictions}/{total_matches} predicciones"
+    )
+    confirm_delete = st.checkbox(
+        "Confirmo que quiero eliminar esta quiniela y sus predicciones.",
+        key=f"confirm_delete_active_entry_{selected_entry_id}",
+    )
+
+    if st.button(
+        "Eliminar quiniela seleccionada",
+        use_container_width=True,
+        disabled=not confirm_delete,
+        type="secondary",
+    ):
+        try:
+            selected_owner_id = clean_text(selected_row.get("user_id"))
+
+            if selected_owner_id != clean_text(user.get("user_id")):
+                st.error("No puedes eliminar una quiniela de otro usuario.")
+                st.stop()
+
+            deleted = repo.delete_entry(selected_entry_id)
+
+            if not deleted:
+                st.error("No se pudo eliminar la quiniela seleccionada.")
+                st.stop()
+
+            remaining_entries = entries[entries["entry_id"] != selected_entry_id]
+            remaining_ids = remaining_entries["entry_id"].tolist()
+
+            if remaining_ids:
+                st.session_state["active_entry_id"] = remaining_ids[0]
+                st.session_state["review_entry_id"] = remaining_ids[0]
+            else:
+                st.session_state.pop("active_entry_id", None)
+                st.session_state.pop("review_entry_id", None)
+
+            st.session_state["entry_delete_success"] = True
+            st.rerun()
+        except ValueError as exc:
+            st.error(str(exc))
 
 st.markdown(
     (
