@@ -170,6 +170,28 @@ class DemoPoolRepository:
         entry["amount_paid"] = amount_paid
         self._upsert(ENTRIES, entry, ["entry_id"])
 
+    def delete_entry(self, entry_id: str) -> bool:
+        """Delete a demo entry and all predictions linked to it."""
+        entry_id = validate_resource_id(entry_id, "entry_id")
+
+        entries = self._df(ENTRIES)
+
+        if entries.empty or entries[entries["entry_id"] == entry_id].empty:
+            return False
+
+        updated_entries = entries[entries["entry_id"] != entry_id].to_dict("records")
+
+        predictions = self._df(PREDICTIONS)
+        updated_predictions: list[dict[str, Any]] = []
+
+        if not predictions.empty:
+            updated_predictions = predictions[predictions["entry_id"] != entry_id].to_dict("records")
+
+        self._replace(ENTRIES, updated_entries)
+        self._replace(PREDICTIONS, updated_predictions)
+
+        return True
+
     def upsert_prediction(
         self,
         entry_id: str,
