@@ -33,7 +33,7 @@ section_header("Cómo funciona", "Lo esencial para entrar y empezar.")
 st.markdown(
     dedent(
         """
-    <section class="qm-compact-panel qm-rules-panel">
+    <section class="qm-compact-panel qm-rules-panel qm-login-compact-panel">
         <div class="qm-compact-panel-item">
             <span class="qm-status-panel-icon">🎟️</span>
             <span><strong>Entra</strong><small>Con tu nickname y código</small></span>
@@ -60,7 +60,7 @@ section_header("Puntuación", "Reglas rápidas por partido.")
 st.markdown(
     dedent(
         """
-    <section class="qm-compact-panel qm-rules-panel">
+    <section class="qm-compact-panel qm-rules-panel qm-login-compact-panel qm-login-score-panel">
         <div class="qm-compact-panel-item">
             <span class="qm-status-panel-icon">✅</span>
             <span><strong>3 pts</strong><small>Resultado correcto</small></span>

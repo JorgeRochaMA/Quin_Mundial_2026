@@ -1131,6 +1131,43 @@ hr {
         order: 1;
     }
 
+    .qm-login-compact-panel .qm-compact-panel-item {
+        align-items: flex-start;
+        justify-content: flex-start;
+    }
+
+    .qm-login-compact-panel .qm-compact-panel-item > span:last-child {
+        align-items: flex-start;
+        display: block;
+        flex: 1;
+    }
+
+    .qm-login-compact-panel .qm-compact-panel-item strong {
+        order: initial;
+        text-align: left;
+        white-space: normal;
+    }
+
+    .qm-login-compact-panel .qm-compact-panel-item small {
+        margin-top: 0.18rem;
+        order: initial;
+    }
+
+    .qm-login-score-panel .qm-compact-panel-item > span:last-child {
+        display: flex;
+        flex-direction: column;
+        gap: 0.15rem;
+    }
+
+    .qm-login-score-panel .qm-compact-panel-item strong {
+        order: 2;
+    }
+
+    .qm-login-score-panel .qm-compact-panel-item small {
+        margin-top: 0;
+        order: 1;
+    }
+
     .qm-podium-item {
         gap: 0.65rem;
         grid-template-columns: auto minmax(0, 1fr);
