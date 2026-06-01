@@ -10,7 +10,7 @@ import pandas as pd
 import streamlit as st
 
 from components.ui import empty_state, info_card, metric_card, page_hero, section_header
-from utils.constants import AWAY_WIN, DRAW, HOME_WIN, MATCHES, PREDICTIONS
+from utils.constants import AWAY_WIN, DRAW, HOME_WIN, MATCHES, PREDICTIONS, RESULTS
 from utils.data import as_int, clean_text
 from utils.scoring import result_from_score
 from utils.time import is_global_prediction_lock_active, is_match_locked, parse_match_datetime
@@ -120,6 +120,18 @@ def _prediction_for_match(entry_predictions: pd.DataFrame, match_id: str) -> dic
 
     if existing.empty:
         return {}
+
+    return existing.iloc[0].to_dict()
+
+
+def _result_for_match(results: pd.DataFrame, match_id: str) -> dict[str, Any] | None:
+    """Return the current official result for a match."""
+    if results.empty:
+        return None
+
+    existing = results[results["match_id"] == match_id]
+    if existing.empty:
+        return None
 
     return existing.iloc[0].to_dict()
 
@@ -523,7 +535,8 @@ def render_predictions_capture(
     for index, match in filtered_matches.iterrows():
         match_id = clean_text(match.get("match_id"))
         current_prediction = _prediction_for_match(entry_predictions, match_id)
-        match_locked = is_match_locked(match.to_dict(), config)
+        official_result = _result_for_match(data[RESULTS], match_id)
+        match_locked = is_match_locked(match.to_dict(), config, official_result)
         locked = match_locked or global_locked
 
         if status_filter == "Pendientes" and current_prediction:

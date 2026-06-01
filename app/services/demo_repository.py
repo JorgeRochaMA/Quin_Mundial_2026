@@ -212,11 +212,14 @@ class DemoPoolRepository:
         match = matches[matches["match_id"] == match_id]
         if match.empty:
             raise ValueError("Partido inválido.")
-        if is_match_locked(match.iloc[0].to_dict(), config):
-            raise ValueError("Las predicciones de este partido están bloqueadas.")
 
         results = self._df(RESULTS)
         result = results[results["match_id"] == match_id] if not results.empty else pd.DataFrame()
+        official_result = None if result.empty else result.iloc[0].to_dict()
+
+        if is_match_locked(match.iloc[0].to_dict(), config, official_result):
+            raise ValueError("Las predicciones de este partido están bloqueadas.")
+
         points = 0
         if not result.empty:
             row = result.iloc[0]

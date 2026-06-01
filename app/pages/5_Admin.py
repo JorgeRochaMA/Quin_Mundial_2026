@@ -12,7 +12,16 @@ import streamlit as st
 from components.layout import configure_page, render_sidebar, require_admin
 from components.ui import info_card, metric_card, page_hero, section_header
 from services.runtime import get_repository_or_stop
-from utils.constants import ENTRIES, MATCHES, PREDICTIONS, RESULTS, STATUS_FINISHED, USERS
+from utils.constants import (
+    ENTRIES,
+    MATCHES,
+    PREDICTIONS,
+    RESULTS,
+    STATUS_FINISHED,
+    STATUS_LOCKED,
+    STATUS_OPEN,
+    USERS,
+)
 from utils.data import as_bool, as_float, as_int, clean_text
 from utils.prizes import calculate_prizes, format_mxn
 
@@ -54,6 +63,11 @@ def _get_existing_result(results: pd.DataFrame, match_id: str) -> dict[str, Any]
     return match.iloc[0].to_dict()
 
 
+def _normalized_match_status(value: Any) -> str:
+    """Return a display-safe match status."""
+    return clean_text(value).upper() or STATUS_OPEN
+
+
 def _count_finished_matches(matches: pd.DataFrame) -> int:
     """Count finished matches from MATCHES."""
     if matches.empty or "status" not in matches.columns:
@@ -63,6 +77,7 @@ def _count_finished_matches(matches: pd.DataFrame) -> int:
         matches["status"]
         .fillna("")
         .astype(str)
+        .str.strip()
         .str.upper()
         .eq(str(STATUS_FINISHED).upper())
         .sum()
@@ -197,7 +212,7 @@ def _render_match_preview(match: dict[str, Any], existing_result: dict[str, Any]
     date = clean_text(match.get("match_date")) or "Sin fecha"
     city = clean_text(match.get("city")) or ""
     stadium = clean_text(match.get("stadium")) or ""
-    status = clean_text(match.get("status")) or "OPEN"
+    status = _normalized_match_status(match.get("status"))
 
     score_text = "Sin resultado"
     if existing_result:
@@ -490,6 +505,65 @@ with config_col:
             st.rerun()
 
 section_header(
+    "Gestionar estado de partidos",
+    "Bloquea o desbloquea manualmente la captura de predicciones por partido.",
+)
+
+if matches.empty:
+    info_card(
+        "No hay partidos cargados",
+        "Carga primero el calendario en MATCHES para gestionar estados.",
+        icon="📅",
+        accent="red",
+    )
+else:
+    status_match_records = matches.to_dict("records")
+    status_labels = [_match_label(row) for row in status_match_records]
+    selected_status_label = st.selectbox(
+        "Partido a gestionar",
+        status_labels,
+        help="Selecciona el partido que quieres abrir o bloquear.",
+        key="admin_match_status_selector",
+    )
+    selected_status_index = status_labels.index(selected_status_label)
+    selected_status_match = status_match_records[selected_status_index]
+    selected_status_value = _normalized_match_status(selected_status_match.get("status"))
+
+    info_card(
+        "Estado actual",
+        (
+            f"{selected_status_value} · "
+            f"{clean_text(selected_status_match.get('home_team')) or 'Local'} vs "
+            f"{clean_text(selected_status_match.get('away_team')) or 'Visitante'}"
+        ),
+        icon="🔒" if selected_status_value == STATUS_LOCKED else "✅",
+        accent="red" if selected_status_value == STATUS_LOCKED else "green",
+    )
+
+    status_options = [STATUS_OPEN, STATUS_LOCKED]
+    status_index = status_options.index(selected_status_value) if selected_status_value in status_options else 0
+
+    with st.form("match_status_form"):
+        new_status = st.selectbox(
+            "Nuevo estado",
+            status_options,
+            index=status_index,
+            help="OPEN permite capturar si no hay resultado oficial ni cierre global. LOCKED bloquea manualmente.",
+        )
+        save_match_status = st.form_submit_button(
+            "Guardar estado de partido",
+            use_container_width=True,
+        )
+
+    if save_match_status:
+        try:
+            repo.update_match_status(selected_status_match["match_id"], new_status)
+            st.success(f"Estado actualizado a {new_status}.")
+            st.rerun()
+        except ValueError as exc:
+            st.error(str(exc))
+
+section_header(
     "Gestión de quinielas",
     "Administra entradas creadas por error y revisa rápidamente el top de la tabla general.",
 )
@@ -589,4 +663,4 @@ with top_col:
         accent="green",
     )
 
-    _render_admin_top_5(rankings)            
+    _render_admin_top_5(rankings)

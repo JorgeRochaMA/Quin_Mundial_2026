@@ -311,11 +311,12 @@ class PoolRepository:
         if match.empty:
             raise ValueError("Partido inválido.")
 
-        if is_match_locked(match.iloc[0].to_dict(), config):
-            raise ValueError("Las predicciones de este partido están bloqueadas.")
-
         results = self._read_sheet(RESULTS)
         result = results[results["match_id"] == match_id] if not results.empty else pd.DataFrame()
+        official_result = None if result.empty else result.iloc[0].to_dict()
+
+        if is_match_locked(match.iloc[0].to_dict(), config, official_result):
+            raise ValueError("Las predicciones de este partido están bloqueadas.")
 
         points = 0
 

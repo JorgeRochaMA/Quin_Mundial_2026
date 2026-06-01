@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Any
 
 import pandas as pd
 
-from utils.constants import STATUS_OPEN
-from utils.data import as_int, clean_text
+from utils.constants import STATUS_BLOCKED, STATUS_CLOSED, STATUS_FINISHED, STATUS_LOCKED, STATUS_OPEN
+from utils.data import clean_text
+
+
+LOCKED_MATCH_STATUSES = {STATUS_LOCKED, STATUS_BLOCKED, STATUS_CLOSED, STATUS_FINISHED}
 
 
 def parse_match_datetime(value: Any) -> datetime | None:
@@ -30,18 +33,29 @@ def is_global_prediction_lock_active(config: dict[str, str]) -> bool:
     return datetime.now() >= lock_at
 
 
-def is_match_locked(match: dict[str, Any], config: dict[str, str]) -> bool:
+def has_official_result(result: dict[str, Any] | None) -> bool:
+    """Return whether an official result row has usable scores."""
+    if not result:
+        return False
+
+    return bool(clean_text(result.get("home_score")) and clean_text(result.get("away_score")))
+
+
+def is_match_locked(
+    match: dict[str, Any],
+    config: dict[str, str],
+    result: dict[str, Any] | None = None,
+) -> bool:
     """Return whether predictions should be locked for the match."""
-    status = clean_text(match.get("status")).upper()
-    if status != STATUS_OPEN:
+    status = clean_text(match.get("status")).upper() or STATUS_OPEN
+
+    if status in LOCKED_MATCH_STATUSES:
+        return True
+
+    if has_official_result(result):
         return True
 
     if is_global_prediction_lock_active(config):
         return True
 
-    match_datetime = parse_match_datetime(match.get("match_date"))
-    if match_datetime is None:
-        return False
-
-    lock_minutes = as_int(config.get("lock_minutes_before_match"), 60)
-    return datetime.now() >= match_datetime - timedelta(minutes=lock_minutes)
+    return False
