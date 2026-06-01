@@ -24,6 +24,7 @@ from utils.constants import (
 )
 from utils.data import as_bool, as_float, as_int, clean_text
 from utils.prizes import calculate_prizes, format_mxn
+from utils.time import get_match_lock_state, normalize_match_status
 
 
 def _clean_html(markup: str) -> str:
@@ -65,7 +66,7 @@ def _get_existing_result(results: pd.DataFrame, match_id: str) -> dict[str, Any]
 
 def _normalized_match_status(value: Any) -> str:
     """Return a display-safe match status."""
-    return clean_text(value).upper() or STATUS_OPEN
+    return normalize_match_status(value)
 
 
 def _count_finished_matches(matches: pd.DataFrame) -> int:
@@ -562,6 +563,33 @@ else:
             st.rerun()
         except ValueError as exc:
             st.error(str(exc))
+
+    diagnostic_match_id = clean_text(selected_status_match.get("match_id"))
+    diagnostic_result = _get_existing_result(results, diagnostic_match_id)
+    lock_state = get_match_lock_state(selected_status_match, config, diagnostic_result)
+    has_user_prediction = False
+    if not predictions.empty and "match_id" in predictions.columns:
+        has_user_prediction = bool(
+            predictions["match_id"].apply(clean_text).eq(diagnostic_match_id).any()
+        )
+
+    diagnostic = pd.DataFrame(
+        [
+            {
+                "match_id": diagnostic_match_id,
+                "raw_status": lock_state.raw_status,
+                "normalized_status": lock_state.normalized_status,
+                "has_official_result": "Sí" if lock_state.has_official_result else "No",
+                "has_user_prediction": "Sí" if has_user_prediction else "No",
+                "global_locked": "Sí" if lock_state.global_locked else "No",
+                "locked": "Sí" if lock_state.locked else "No",
+                "reason": lock_state.reason,
+            }
+        ]
+    )
+
+    st.caption("Diagnóstico de bloqueo: las predicciones existentes no bloquean partidos.")
+    st.dataframe(diagnostic, hide_index=True, use_container_width=True)
 
 section_header(
     "Gestión de quinielas",

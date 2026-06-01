@@ -13,7 +13,7 @@ from components.ui import empty_state, info_card, metric_card, page_hero, sectio
 from utils.constants import AWAY_WIN, DRAW, HOME_WIN, MATCHES, PREDICTIONS, RESULTS
 from utils.data import as_int, clean_text
 from utils.scoring import result_from_score
-from utils.time import is_global_prediction_lock_active, is_match_locked, parse_match_datetime
+from utils.time import get_match_lock_state, is_global_prediction_lock_active, parse_match_datetime
 
 
 MONTHS_ES = {
@@ -536,8 +536,8 @@ def render_predictions_capture(
         match_id = clean_text(match.get("match_id"))
         current_prediction = _prediction_for_match(entry_predictions, match_id)
         official_result = _result_for_match(data[RESULTS], match_id)
-        match_locked = is_match_locked(match.to_dict(), config, official_result)
-        locked = match_locked or global_locked
+        lock_state = get_match_lock_state(match.to_dict(), config, official_result)
+        locked = lock_state.locked
 
         if status_filter == "Pendientes" and current_prediction:
             continue
