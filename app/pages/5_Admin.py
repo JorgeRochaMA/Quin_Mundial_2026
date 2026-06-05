@@ -17,6 +17,7 @@ from utils.constants import (
     MATCHES,
     PREDICTIONS,
     RESULTS,
+    ROLE_ADMIN,
     STATUS_FINISHED,
     STATUS_LOCKED,
     STATUS_OPEN,
@@ -262,12 +263,16 @@ def _render_pct_status(total_pct: int) -> None:
 
 
 configure_page("Admin")
-require_admin()
+admin_user = require_admin()
 
 repo = get_repository_or_stop()
 data = repo.load_data()
 config = repo.get_config()
 render_sidebar(data)
+
+admin_user_success = st.session_state.pop("admin_user_success", "")
+if admin_user_success:
+    st.success(admin_user_success)
 
 matches = data[MATCHES]
 entries = data[ENTRIES]
@@ -590,6 +595,140 @@ else:
 
     st.caption("Diagnóstico de bloqueo: las predicciones existentes no bloquean partidos.")
     st.dataframe(diagnostic, hide_index=True, use_container_width=True)
+
+section_header(
+    "Gestión de usuarios",
+    "Resetea contraseñas o elimina usuarios duplicados con sus quinielas y predicciones.",
+)
+
+if users.empty:
+    info_card(
+        "No hay usuarios cargados",
+        "Cuando existan usuarios registrados, aquí podrás administrarlos.",
+        icon="👤",
+        accent="gold",
+    )
+else:
+    user_records = users.to_dict("records")
+    user_labels = [
+        (
+            f"{clean_text(user_row.get('nickname')) or 'Sin nickname'} · "
+            f"{clean_text(user_row.get('role')) or 'USER'} · "
+            f"{clean_text(user_row.get('user_id')) or '-'}"
+        )
+        for user_row in user_records
+    ]
+
+    selected_user_label = st.selectbox(
+        "Usuario",
+        user_labels,
+        help="Selecciona el usuario que quieres administrar.",
+        key="admin_user_selector",
+    )
+    selected_user = user_records[user_labels.index(selected_user_label)]
+    selected_user_id = clean_text(selected_user.get("user_id"))
+    selected_nickname = clean_text(selected_user.get("nickname")) or "Sin nickname"
+    selected_role = clean_text(selected_user.get("role")).upper() or "USER"
+    selected_is_admin = selected_role == ROLE_ADMIN
+    selected_is_current_admin = selected_user_id == clean_text(admin_user.get("user_id"))
+
+    selected_user_entries = pd.DataFrame()
+    if not entries.empty and "user_id" in entries.columns:
+        selected_user_entries = entries[entries["user_id"] == selected_user_id]
+
+    selected_entry_ids = set()
+    if not selected_user_entries.empty and "entry_id" in selected_user_entries.columns:
+        selected_entry_ids = {
+            clean_text(row.get("entry_id"))
+            for _, row in selected_user_entries.iterrows()
+            if clean_text(row.get("entry_id"))
+        }
+
+    selected_user_predictions = pd.DataFrame()
+    if not predictions.empty and "entry_id" in predictions.columns:
+        selected_user_predictions = predictions[
+            predictions["entry_id"].apply(clean_text).isin(selected_entry_ids)
+        ]
+
+    reset_col, delete_col = st.columns(2)
+
+    with reset_col:
+        info_card(
+            "Resetear contraseña",
+            f"Usuario: {selected_nickname} · {selected_user_id}",
+            icon="🔑",
+            accent="green",
+        )
+
+        with st.form("admin_reset_user_password_form"):
+            new_password = st.text_input("Nueva contraseña temporal", type="password")
+            confirm_password = st.text_input("Confirmar contraseña", type="password")
+            reset_password = st.form_submit_button(
+                "Actualizar contraseña",
+                use_container_width=True,
+            )
+
+        if reset_password:
+            if not new_password:
+                st.error("Escribe una nueva contraseña temporal.")
+            elif len(new_password) < 4:
+                st.error("La contraseña debe tener al menos 4 caracteres.")
+            elif new_password != confirm_password:
+                st.error("Las contraseñas no coinciden.")
+            else:
+                try:
+                    updated = repo.update_user_password(selected_user_id, new_password)
+                    if updated:
+                        st.session_state["admin_user_success"] = "Contraseña actualizada correctamente."
+                        st.rerun()
+                    else:
+                        st.error("No se encontró el usuario seleccionado.")
+                except ValueError as exc:
+                    st.error(str(exc))
+
+    with delete_col:
+        info_card(
+            "Eliminar usuario duplicado",
+            (
+                f"{selected_nickname} · {selected_user_id} · "
+                f"{len(selected_user_entries)} quinielas · "
+                f"{len(selected_user_predictions)} predicciones"
+            ),
+            icon="🗑️",
+            accent="red",
+        )
+
+        delete_disabled = selected_is_admin or selected_is_current_admin
+        if selected_is_admin:
+            st.warning("Los usuarios ADMIN no se pueden eliminar desde esta acción.")
+
+        confirm_delete_user = st.checkbox(
+            "Confirmo que quiero eliminar este usuario, sus quinielas y sus predicciones.",
+            key=f"confirm_delete_user_{selected_user_id}",
+            disabled=delete_disabled,
+        )
+
+        if st.button(
+            "Eliminar usuario",
+            use_container_width=True,
+            disabled=delete_disabled or not confirm_delete_user,
+            type="secondary",
+        ):
+            try:
+                deleted = repo.delete_user(selected_user_id)
+
+                if not deleted:
+                    st.error("No se encontró el usuario seleccionado.")
+                    st.stop()
+
+                if selected_is_current_admin:
+                    st.session_state.clear()
+                else:
+                    st.session_state["admin_user_success"] = "Usuario eliminado correctamente."
+
+                st.rerun()
+            except ValueError as exc:
+                st.error(str(exc))
 
 section_header(
     "Gestión de quinielas",

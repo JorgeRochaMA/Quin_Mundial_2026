@@ -17,9 +17,11 @@ from utils.constants import (
     RESULTS,
     SHEET_COLUMNS,
     USERS,
+    ROLE_ADMIN,
     ROLE_USER,
 )
 from utils.data import as_bool, as_int, clean_text, now_iso
+from utils.passwords import hash_password
 from utils.scoring import calculate_prediction_points
 from utils.time import is_match_locked
 from utils.validation import (
@@ -198,6 +200,31 @@ class PoolRepository:
         self.sheets.upsert_record(USERS, user, SHEET_COLUMNS[USERS], ["user_id"])
         self._invalidate(USERS)
 
+    def update_user_password(self, user_id: str, new_password: str) -> bool:
+        """Set a new password hash for a user."""
+        new_password = clean_text(new_password)
+        if len(new_password) < 4:
+            raise ValueError("La contraseña debe tener al menos 4 caracteres.")
+
+        user_id = validate_resource_id(user_id, "user_id")
+        users = self._read_sheet(USERS)
+
+        if users.empty:
+            return False
+
+        match = users[users["user_id"] == user_id]
+
+        if match.empty:
+            return False
+
+        user = match.iloc[0].to_dict()
+        user["password_hash"] = hash_password(new_password)
+
+        self.sheets.upsert_record(USERS, user, SHEET_COLUMNS[USERS], ["user_id"])
+        self._invalidate(USERS)
+
+        return True
+
     def update_user_role(self, user_id: str, role: str) -> None:
         """Promote or demote a user role."""
         user_id = validate_resource_id(user_id, "user_id")
@@ -217,6 +244,55 @@ class PoolRepository:
 
         self.sheets.upsert_record(USERS, user, SHEET_COLUMNS[USERS], ["user_id"])
         self._invalidate(USERS)
+
+    def delete_user(self, user_id: str) -> bool:
+        """Delete a user, their entries, and predictions linked to those entries."""
+        user_id = validate_resource_id(user_id, "user_id")
+
+        users = self._read_sheet(USERS)
+
+        if users.empty:
+            return False
+
+        match = users[users["user_id"] == user_id]
+
+        if match.empty:
+            return False
+
+        user = match.iloc[0].to_dict()
+        if clean_text(user.get("role")).upper() == ROLE_ADMIN:
+            raise ValueError("No se puede eliminar un usuario administrador.")
+
+        entries = self._read_sheet(ENTRIES)
+        user_entry_ids: set[str] = set()
+        updated_entries: list[dict[str, Any]] = []
+
+        if not entries.empty:
+            user_entries = entries[entries["user_id"] == user_id]
+            user_entry_ids = {
+                clean_text(row.get("entry_id"))
+                for _, row in user_entries.iterrows()
+                if clean_text(row.get("entry_id"))
+            }
+            updated_entries = entries[entries["user_id"] != user_id].to_dict("records")
+
+        predictions = self._read_sheet(PREDICTIONS)
+        updated_predictions: list[dict[str, Any]] = []
+
+        if not predictions.empty:
+            updated_predictions = predictions[
+                ~predictions["entry_id"].apply(clean_text).isin(user_entry_ids)
+            ].to_dict("records")
+
+        updated_users = users[users["user_id"] != user_id].to_dict("records")
+
+        self.sheets.replace_records(USERS, updated_users, SHEET_COLUMNS[USERS])
+        self.sheets.replace_records(ENTRIES, updated_entries, SHEET_COLUMNS[ENTRIES])
+        self.sheets.replace_records(PREDICTIONS, updated_predictions, SHEET_COLUMNS[PREDICTIONS])
+
+        self._invalidate(USERS, ENTRIES, PREDICTIONS)
+
+        return True
 
     def create_entry(self, user_id: str, entry_name: str) -> dict[str, Any]:
         """Create a prediction entry for a user."""

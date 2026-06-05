@@ -24,6 +24,7 @@ from utils.constants import (
     USERS,
 )
 from utils.data import as_bool, as_int, clean_text, now_iso
+from utils.passwords import hash_password
 from utils.scoring import calculate_prediction_points
 from utils.time import is_match_locked
 from utils.validation import (
@@ -129,6 +130,24 @@ class DemoPoolRepository:
         user["password_hash"] = clean_text(password_hash)
         self._upsert(USERS, user, ["user_id"])
 
+    def update_user_password(self, user_id: str, new_password: str) -> bool:
+        """Set a new password hash for a demo user."""
+        new_password = clean_text(new_password)
+        if len(new_password) < 4:
+            raise ValueError("La contraseña debe tener al menos 4 caracteres.")
+
+        user_id = validate_resource_id(user_id, "user_id")
+        users = self._df(USERS)
+        match = users[users["user_id"] == user_id]
+        if match.empty:
+            return False
+
+        user = match.iloc[0].to_dict()
+        user["password_hash"] = hash_password(new_password)
+        self._upsert(USERS, user, ["user_id"])
+
+        return True
+
     def update_user_role(self, user_id: str, role: str) -> None:
         """Promote or demote a demo user."""
         user_id = validate_resource_id(user_id, "user_id")
@@ -139,6 +158,47 @@ class DemoPoolRepository:
         user = match.iloc[0].to_dict()
         user["role"] = role
         self._upsert(USERS, user, ["user_id"])
+
+    def delete_user(self, user_id: str) -> bool:
+        """Delete a demo user, their entries, and linked predictions."""
+        user_id = validate_resource_id(user_id, "user_id")
+        users = self._df(USERS)
+        match = users[users["user_id"] == user_id]
+        if match.empty:
+            return False
+
+        user = match.iloc[0].to_dict()
+        if clean_text(user.get("role")).upper() == ROLE_ADMIN:
+            raise ValueError("No se puede eliminar un usuario administrador.")
+
+        entries = self._df(ENTRIES)
+        user_entry_ids: set[str] = set()
+        updated_entries: list[dict[str, Any]] = []
+
+        if not entries.empty:
+            user_entries = entries[entries["user_id"] == user_id]
+            user_entry_ids = {
+                clean_text(row.get("entry_id"))
+                for _, row in user_entries.iterrows()
+                if clean_text(row.get("entry_id"))
+            }
+            updated_entries = entries[entries["user_id"] != user_id].to_dict("records")
+
+        predictions = self._df(PREDICTIONS)
+        updated_predictions: list[dict[str, Any]] = []
+
+        if not predictions.empty:
+            updated_predictions = predictions[
+                ~predictions["entry_id"].apply(clean_text).isin(user_entry_ids)
+            ].to_dict("records")
+
+        updated_users = users[users["user_id"] != user_id].to_dict("records")
+
+        self._replace(USERS, updated_users)
+        self._replace(ENTRIES, updated_entries)
+        self._replace(PREDICTIONS, updated_predictions)
+
+        return True
 
     def create_entry(self, user_id: str, entry_name: str) -> dict[str, Any]:
         """Create a demo prediction entry."""
