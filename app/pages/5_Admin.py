@@ -70,6 +70,11 @@ def _normalized_match_status(value: Any) -> str:
     return normalize_match_status(value)
 
 
+def _payment_label(value: Any) -> str:
+    """Return a Spanish payment status label."""
+    return "✅ Pagada" if as_bool(value) else "⏳ Pendiente"
+
+
 def _count_finished_matches(matches: pd.DataFrame) -> int:
     """Count finished matches from MATCHES."""
     if matches.empty or "status" not in matches.columns:
@@ -273,6 +278,10 @@ render_sidebar(data)
 admin_user_success = st.session_state.pop("admin_user_success", "")
 if admin_user_success:
     st.success(admin_user_success)
+
+admin_payment_success = st.session_state.pop("admin_payment_success", "")
+if admin_payment_success:
+    st.success(admin_payment_success)
 
 matches = data[MATCHES]
 entries = data[ENTRIES]
@@ -729,6 +738,102 @@ else:
                 st.rerun()
             except ValueError as exc:
                 st.error(str(exc))
+
+section_header(
+    "Gestión de pagos",
+    "Marca quinielas como pagadas o pendientes sin modificar el monto registrado.",
+)
+
+if entries.empty:
+    info_card(
+        "No hay quinielas registradas",
+        "Cuando existan quinielas, aquí podrás administrar su estado de pago.",
+        icon="💵",
+        accent="gold",
+    )
+else:
+    payment_entries = entries.copy()
+
+    if "active" in payment_entries.columns:
+        payment_entries = payment_entries[payment_entries["active"].apply(as_bool)]
+
+    if payment_entries.empty:
+        info_card(
+            "Sin quinielas activas",
+            "No hay entradas activas para administrar pagos.",
+            icon="💵",
+            accent="gold",
+        )
+    else:
+        payment_labels = []
+
+        for _, row in payment_entries.iterrows():
+            entry_id = clean_text(row.get("entry_id"))
+            entry_name = clean_text(row.get("entry_name")) or "Sin nombre"
+            user_id = clean_text(row.get("user_id"))
+            payment_status = "pagada" if as_bool(row.get("paid")) else "pendiente"
+
+            nickname = "Sin usuario"
+            if not users.empty and "user_id" in users.columns:
+                user_match = users[users["user_id"] == user_id]
+                if not user_match.empty:
+                    nickname = clean_text(user_match.iloc[0].get("nickname")) or nickname
+
+            payment_labels.append(
+                {
+                    "label": f"{entry_name} · {nickname} · {payment_status} · {entry_id}",
+                    "entry_id": entry_id,
+                    "entry_name": entry_name,
+                    "nickname": nickname,
+                    "paid": as_bool(row.get("paid")),
+                }
+            )
+
+        selected_payment_label = st.selectbox(
+            "Quiniela para pago",
+            [item["label"] for item in payment_labels],
+            help="Selecciona la quiniela cuyo pago quieres actualizar.",
+            key="admin_payment_entry_selector",
+        )
+        selected_payment_entry = next(
+            item for item in payment_labels if item["label"] == selected_payment_label
+        )
+
+        selected_entry_predictions = pd.DataFrame()
+        if not predictions.empty and "entry_id" in predictions.columns:
+            selected_entry_predictions = predictions[
+                predictions["entry_id"].apply(clean_text).eq(selected_payment_entry["entry_id"])
+            ]
+
+        info_card(
+            selected_payment_entry["entry_name"],
+            (
+                f"Jugador: {selected_payment_entry['nickname']} · "
+                f"{len(selected_entry_predictions)} predicciones · "
+                f"Pago: {_payment_label(selected_payment_entry['paid'])}"
+            ),
+            icon="💵",
+            accent="green" if selected_payment_entry["paid"] else "gold",
+        )
+
+        next_paid_status = not selected_payment_entry["paid"]
+        payment_button_label = (
+            "Marcar como pendiente"
+            if selected_payment_entry["paid"]
+            else "Marcar como pagada"
+        )
+
+        if st.button(payment_button_label, use_container_width=True, type="secondary"):
+            updated = repo.update_entry_payment_status(
+                selected_payment_entry["entry_id"],
+                next_paid_status,
+            )
+
+            if updated:
+                st.session_state["admin_payment_success"] = "Estado de pago actualizado correctamente."
+                st.rerun()
+            else:
+                st.error("No se encontró la quiniela seleccionada.")
 
 section_header(
     "Gestión de quinielas",

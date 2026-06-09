@@ -230,6 +230,18 @@ class DemoPoolRepository:
         entry["amount_paid"] = amount_paid
         self._upsert(ENTRIES, entry, ["entry_id"])
 
+    def update_entry_payment_status(self, entry_id: str, paid: bool) -> bool:
+        """Update only the payment status for a demo entry."""
+        entry_id = validate_resource_id(entry_id, "entry_id")
+        entries = self._df(ENTRIES)
+        match = entries[entries["entry_id"] == entry_id]
+        if match.empty:
+            return False
+        entry = match.iloc[0].to_dict()
+        entry["paid"] = bool(paid)
+        self._upsert(ENTRIES, entry, ["entry_id"])
+        return True
+
     def delete_entry(self, entry_id: str) -> bool:
         """Delete a demo entry and all predictions linked to it."""
         entry_id = validate_resource_id(entry_id, "entry_id")

@@ -11,7 +11,7 @@ from components.layout import configure_page, render_sidebar, require_login, use
 from components.ui import empty_state, info_card, page_hero, section_header
 from services.runtime import get_repository_or_stop
 from utils.constants import MATCHES, PREDICTIONS, RESULTS, USERS
-from utils.data import as_int, clean_text
+from utils.data import as_bool, as_int, clean_text
 from utils.predictions import build_entry_prediction_summary
 from utils.rankings import build_rankings
 
@@ -42,6 +42,7 @@ def _render_entry_review_list(
         created_at = clean_text(entry.get("created_at")) or "-"
         points = int(points_by_entry.get(entry_id, 0))
         captured = int(captured_by_entry.get(entry_id, 0))
+        payment_label = "✅ Pagada" if as_bool(entry.get("paid")) else "⏳ Pendiente de pago"
         is_selected = entry_id == selected_entry_id
         is_active = entry_id == active_entry_id
         selected_class = " qm-entry-review-row-selected" if is_selected else ""
@@ -63,6 +64,10 @@ def _render_entry_review_list(
                 <div class="qm-entry-review-metric">
                     <strong>{captured}/{total_matches}</strong>
                     <small>predicciones</small>
+                </div>
+                <div class="qm-entry-review-metric">
+                    <strong>{escape(payment_label)}</strong>
+                    <small>pago</small>
                 </div>
                 <div class="qm-entry-review-status">
                     <span class="qm-status-pill qm-accent-{status_accent}">{escape(status_label)}</span>

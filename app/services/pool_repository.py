@@ -334,6 +334,24 @@ class PoolRepository:
 
         self.sheets.upsert_record(ENTRIES, entry, SHEET_COLUMNS[ENTRIES], ["entry_id"])
         self._invalidate(ENTRIES)
+
+    def update_entry_payment_status(self, entry_id: str, paid: bool) -> bool:
+        """Update only the payment status for an entry."""
+        entry_id = validate_resource_id(entry_id, "entry_id")
+
+        entries = self._read_sheet(ENTRIES)
+        match = entries[entries["entry_id"] == entry_id]
+
+        if match.empty:
+            return False
+
+        entry = match.iloc[0].to_dict()
+        entry["paid"] = bool(paid)
+
+        self.sheets.upsert_record(ENTRIES, entry, SHEET_COLUMNS[ENTRIES], ["entry_id"])
+        self._invalidate(ENTRIES)
+
+        return True
     
     def delete_entry(self, entry_id: str) -> bool:
         """Delete an entry and all predictions linked to it."""
