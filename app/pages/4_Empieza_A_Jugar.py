@@ -11,7 +11,7 @@ from components.predictions_capture import render_predictions_capture
 from components.ui import empty_state, info_card, page_hero, section_header
 from services.runtime import get_repository_or_stop
 from utils.constants import MATCHES, PREDICTIONS, RESULTS, USERS
-from utils.data import clean_text
+from utils.data import as_bool, clean_text
 from utils.rankings import build_rankings
 
 
@@ -27,6 +27,7 @@ if st.session_state.pop("entry_delete_success", False):
 
 entries = user_entries(data, user["user_id"])
 rankings = build_rankings(entries, data[USERS], data[PREDICTIONS], data[RESULTS])
+entries_creation_enabled = as_bool(config.get("entries_creation_enabled", "TRUE"))
 
 points_by_entry = {}
 if not rankings.empty:
@@ -90,21 +91,33 @@ section_header(
 )
 
 create_col, select_col = st.columns(2)
+submitted = False
 
 with create_col:
-    info_card(
-        "Crear nueva quiniela",
-        "Puedes crear varias quinielas si quieres jugar con diferentes estrategias.",
-        icon="🎟️",
-        accent="gold",
-    )
+    if entries_creation_enabled:
+        info_card(
+            "Crear nueva quiniela",
+            "Puedes crear varias quinielas si quieres jugar con diferentes estrategias.",
+            icon="🎟️",
+            accent="gold",
+        )
 
-    with st.form("start_create_entry"):
-        default_number = len(entries) + 1
-        default_name = f"{user.get('nickname')} #{default_number}"
+        with st.form("start_create_entry"):
+            default_number = len(entries) + 1
+            default_name = f"{user.get('nickname')} #{default_number}"
 
-        entry_name = st.text_input("Nombre de la nueva quiniela", value=default_name)
-        submitted = st.form_submit_button("Crear quiniela", use_container_width=True)
+            entry_name = st.text_input("Nombre de la nueva quiniela", value=default_name)
+            submitted = st.form_submit_button("Crear quiniela", use_container_width=True)
+    else:
+        info_card(
+            "Registro cerrado",
+            (
+                "Ya no es posible crear nuevas quinielas. Ahora puedes seguir el ranking, "
+                "resultados y estadísticas del torneo."
+            ),
+            icon="🔒",
+            accent="red",
+        )
 
 if submitted:
     if not entry_name.strip():
@@ -127,11 +140,18 @@ with select_col:
     )
 
     if entries.empty:
-        empty_state(
-            "Aún no tienes quinielas",
-            "Crea tu primera quiniela para empezar a capturar predicciones.",
-            icon="🎟️",
-        )
+        if entries_creation_enabled:
+            empty_state(
+                "Aún no tienes quinielas",
+                "Crea tu primera quiniela para empezar a capturar predicciones.",
+                icon="🎟️",
+            )
+        else:
+            empty_state(
+                "No tienes quinielas registradas",
+                "El registro ya cerró. Puedes seguir el ranking, resultados y estadísticas del torneo.",
+                icon="🔒",
+            )
         st.stop()
 
     labels = [

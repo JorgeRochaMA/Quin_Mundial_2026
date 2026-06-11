@@ -1,4 +1,4 @@
-"""Dashboard page."""
+"""Live ranking page."""
 
 from __future__ import annotations
 
@@ -9,8 +9,9 @@ import pandas as pd
 import streamlit as st
 
 from components.layout import configure_page, render_sidebar, require_login
+from components.ui import empty_state
 from services.runtime import get_repository_or_stop
-from utils.constants import ENTRIES, PREDICTIONS, RESULTS, USERS
+from utils.constants import ENTRIES, MATCHES, PREDICTIONS, RESULTS, USERS
 from utils.data import as_bool, as_float, as_int, clean_text
 from utils.prizes import calculate_prizes, format_mxn
 from utils.rankings import build_rankings
@@ -53,6 +54,97 @@ def _finished_matches_count(results: pd.DataFrame) -> int:
         & results["away_score"].apply(clean_text).ne("")
     ]
     return len(finished["match_id"].drop_duplicates())
+
+
+def _short_date(value: object) -> str:
+    """Render a compact Spanish date label."""
+    parsed = pd.to_datetime(clean_text(value), errors="coerce")
+    if pd.isna(parsed):
+        return "-"
+
+    months = {
+        1: "Ene",
+        2: "Feb",
+        3: "Mar",
+        4: "Abr",
+        5: "May",
+        6: "Jun",
+        7: "Jul",
+        8: "Ago",
+        9: "Sep",
+        10: "Oct",
+        11: "Nov",
+        12: "Dic",
+    }
+    return f"{parsed.day} {months.get(parsed.month, '')}".strip()
+
+
+def _winner_label(home_team: str, away_team: str, home_score: int, away_score: int) -> str:
+    """Return the official winner label."""
+    if home_score > away_score:
+        return home_team
+    if away_score > home_score:
+        return away_team
+    return "Empate"
+
+
+def _render_official_results(matches: pd.DataFrame, results: pd.DataFrame) -> None:
+    """Render official match results captured by admins."""
+    if matches.empty or results.empty:
+        empty_state(
+            "Aún no hay resultados oficiales",
+            "Cuando el admin capture marcadores, aquí aparecerán.",
+            icon="⚽",
+        )
+        return
+
+    scored_results = results[
+        results["home_score"].apply(clean_text).ne("")
+        & results["away_score"].apply(clean_text).ne("")
+    ].copy()
+
+    if scored_results.empty:
+        empty_state(
+            "Aún no hay resultados oficiales",
+            "Cuando el admin capture marcadores, aquí aparecerán.",
+            icon="⚽",
+        )
+        return
+
+    merged = matches.merge(scored_results, on="match_id", how="inner")
+
+    if merged.empty:
+        empty_state(
+            "Aún no hay resultados oficiales",
+            "Cuando el admin capture marcadores, aquí aparecerán.",
+            icon="⚽",
+        )
+        return
+
+    merged["_parsed_date"] = pd.to_datetime(merged["match_date"], errors="coerce")
+    merged = merged.sort_values(["_parsed_date", "match_id"], na_position="last")
+
+    table = pd.DataFrame(
+        [
+            {
+                "Fecha": _short_date(row.get("match_date")),
+                "Partido": (
+                    f"{clean_text(row.get('home_team')) or 'Local'}"
+                    f" vs {clean_text(row.get('away_team')) or 'Visitante'}"
+                ),
+                "Marcador": f"{as_int(row.get('home_score'), 0)} - {as_int(row.get('away_score'), 0)}",
+                "Ganador / Empate": _winner_label(
+                    clean_text(row.get("home_team")) or "Local",
+                    clean_text(row.get("away_team")) or "Visitante",
+                    as_int(row.get("home_score"), 0),
+                    as_int(row.get("away_score"), 0),
+                ),
+            }
+            for _, row in merged.iterrows()
+        ]
+    )
+
+    st.dataframe(table, hide_index=True, use_container_width=True)
 
 
 def _render_podium(rankings: pd.DataFrame) -> None:
@@ -136,7 +228,7 @@ def _render_rankings(rankings: pd.DataFrame) -> None:
     st.dataframe(styled, hide_index=True, use_container_width=True)
 
 
-configure_page("Dashboard")
+configure_page("Ranking en vivo")
 require_login()
 repo = get_repository_or_stop()
 data = repo.load_data()
@@ -144,6 +236,7 @@ config = repo.get_config()
 render_sidebar(data)
 
 entries = data[ENTRIES]
+matches = data[MATCHES]
 users = data[USERS]
 rankings = build_rankings(entries, users, data[PREDICTIONS], data[RESULTS])
 prizes = calculate_prizes(entries, config)
@@ -167,9 +260,9 @@ st.markdown(
     f"""
     <section class="qm-dashboard-hero">
         <div class="qm-hero-content">
-            <p class="qm-hero-kicker">Panel de la quiniela</p>
-            <h1>Quiniela Mundial 2026</h1>
-            <p class="qm-hero-subtitle">{escape(phase_label)} · {phase_total_matches} partidos · {phase_groups} grupos</p>
+            <p class="qm-hero-kicker">Ranking en vivo</p>
+            <h1>Ranking en vivo</h1>
+            <p class="qm-hero-subtitle">Seguimiento de la Quiniela Mundial 2026 · {escape(phase_label)} · {phase_total_matches} partidos</p>
             <div class="qm-pill-row">
                 <span>{escape(phase_label)}</span>
                 <span>{phase_total_matches} partidos</span>
@@ -313,3 +406,7 @@ _render_podium(rankings)
 
 st.markdown("### Tabla general")
 _render_rankings(rankings)
+
+st.markdown("### Resultados oficiales")
+st.caption("Partidos con marcador oficial capturado.")
+_render_official_results(matches, data[RESULTS])

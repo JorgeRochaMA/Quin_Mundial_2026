@@ -17,7 +17,7 @@ repo = get_repository_or_stop()
 render_sidebar()
 
 if current_user():
-    st.switch_page("pages/0_Empieza_A_Jugar.py")
+    st.switch_page("pages/1_Ranking_En_Vivo.py")
 
 page_hero(
     "Quiniela Mundial 2026",
@@ -103,6 +103,6 @@ if submitted:
         )
         st.session_state["user"] = user
         st.success("Listo, ya estás dentro.")
-        st.switch_page("pages/0_Empieza_A_Jugar.py")
+        st.switch_page("pages/1_Ranking_En_Vivo.py")
     except (AuthError, ValueError) as exc:
         st.error(str(exc))

@@ -189,7 +189,7 @@ if entries.empty:
         "Ve a Empieza a jugar para crear tu primera quiniela y capturar predicciones.",
         icon="🎟️",
     )
-    st.page_link("pages/0_Empieza_A_Jugar.py", label="Crear quiniela en Empieza A Jugar")
+    st.page_link("pages/4_Empieza_A_Jugar.py", label="Ir a Empieza A Jugar")
 else:
     ids = entries["entry_id"].tolist()
     review_entry_id = st.session_state.get("review_entry_id")
