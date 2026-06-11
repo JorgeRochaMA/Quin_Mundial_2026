@@ -192,7 +192,7 @@ if entries.empty:
             "Ve a Empieza A Jugar para crear tu primera quiniela.",
             icon="🎟️",
         )
-        st.page_link("pages/4_Empieza_A_Jugar.py", label="Ir a Empieza A Jugar")
+        st.page_link("pages/5_Empieza_A_Jugar.py", label="Ir a Empieza A Jugar")
     else:
         empty_state(
             "Aún no tienes quinielas registradas.",
