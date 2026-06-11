@@ -365,7 +365,7 @@ if not match_counts.empty:
 
 page_hero(
     "Estadísticas",
-    "Insights sociales de las predicciones capturadas por los participantes.",
+    "Explora tendencias, favoritos, grupos y comportamiento de los participantes.",
     eyebrow="Lectura del grupo",
     pills=[
         f"{total_entries} quinielas activas",
@@ -375,8 +375,11 @@ page_hero(
 )
 
 info_card(
-    "Predicciones, no resultados oficiales",
-    "Estas estadísticas reflejan las predicciones capturadas por los participantes, no resultados oficiales.",
+    "Insights de la quiniela",
+    (
+        "Estas métricas se calculan con las predicciones capturadas por los participantes. "
+        "Los resultados oficiales se mostrarán en la sección Post partido."
+    ),
     icon="📊",
     accent="navy",
 )
