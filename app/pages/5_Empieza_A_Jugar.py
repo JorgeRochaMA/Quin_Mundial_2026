@@ -183,44 +183,52 @@ with select_col:
         f"{selected_name} · {int(points_by_entry.get(selected_entry_id, 0))} pts · "
         f"{captured_predictions}/{total_matches} predicciones"
     )
-    confirm_delete = st.checkbox(
-        "Confirmo que quiero eliminar esta quiniela y sus predicciones.",
-        key=f"confirm_delete_active_entry_{selected_entry_id}",
-    )
+    if entries_creation_enabled:
+        confirm_delete = st.checkbox(
+            "Confirmo que quiero eliminar esta quiniela y sus predicciones.",
+            key=f"confirm_delete_active_entry_{selected_entry_id}",
+        )
 
-    if st.button(
-        "Eliminar quiniela seleccionada",
-        use_container_width=True,
-        disabled=not confirm_delete,
-        type="secondary",
-    ):
-        try:
-            selected_owner_id = clean_text(selected_row.get("user_id"))
+        if st.button(
+            "Eliminar quiniela seleccionada",
+            use_container_width=True,
+            disabled=not confirm_delete,
+            type="secondary",
+        ):
+            try:
+                selected_owner_id = clean_text(selected_row.get("user_id"))
 
-            if selected_owner_id != clean_text(user.get("user_id")):
-                st.error("No puedes eliminar una quiniela de otro usuario.")
-                st.stop()
+                if selected_owner_id != clean_text(user.get("user_id")):
+                    st.error("No puedes eliminar una quiniela de otro usuario.")
+                    st.stop()
 
-            deleted = repo.delete_entry(selected_entry_id)
+                deleted = repo.delete_entry(selected_entry_id)
 
-            if not deleted:
-                st.error("No se pudo eliminar la quiniela seleccionada.")
-                st.stop()
+                if not deleted:
+                    st.error("No se pudo eliminar la quiniela seleccionada.")
+                    st.stop()
 
-            remaining_entries = entries[entries["entry_id"] != selected_entry_id]
-            remaining_ids = remaining_entries["entry_id"].tolist()
+                remaining_entries = entries[entries["entry_id"] != selected_entry_id]
+                remaining_ids = remaining_entries["entry_id"].tolist()
 
-            if remaining_ids:
-                st.session_state["active_entry_id"] = remaining_ids[0]
-                st.session_state["review_entry_id"] = remaining_ids[0]
-            else:
-                st.session_state.pop("active_entry_id", None)
-                st.session_state.pop("review_entry_id", None)
+                if remaining_ids:
+                    st.session_state["active_entry_id"] = remaining_ids[0]
+                    st.session_state["review_entry_id"] = remaining_ids[0]
+                else:
+                    st.session_state.pop("active_entry_id", None)
+                    st.session_state.pop("review_entry_id", None)
 
-            st.session_state["entry_delete_success"] = True
-            st.rerun()
-        except ValueError as exc:
-            st.error(str(exc))
+                st.session_state["entry_delete_success"] = True
+                st.rerun()
+            except ValueError as exc:
+                st.error(str(exc))
+    else:
+        info_card(
+            "Eliminación cerrada",
+            "El registro ya cerró. Si necesitas corregir o eliminar una quiniela, contacta al administrador.",
+            icon="🔒",
+            accent="red",
+        )
 
 st.markdown(
     (
