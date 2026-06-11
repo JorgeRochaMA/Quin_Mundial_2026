@@ -381,80 +381,6 @@ info_card(
     accent="navy",
 )
 
-if predictions.empty:
-    empty_state(
-        "Aún no hay predicciones suficientes",
-        "Cuando los participantes capturen marcadores, aquí aparecerán las tendencias del grupo.",
-        icon="📈",
-    )
-    st.stop()
-
-section_header(
-    "Resumen social",
-    "Una lectura rápida de los patrones más fuertes de la quiniela.",
-)
-
-card_cols = st.columns(5)
-with card_cols[0]:
-    metric_card("Predicciones", str(total_predictions), "Capturadas", "green")
-with card_cols[1]:
-    metric_card(
-        "Marcador popular",
-        popular_score,
-        f"{popular_score_count} veces",
-        "gold",
-    )
-with card_cols[2]:
-    metric_card(
-        "Equipo favorito",
-        top_winner,
-        f"{top_winner_count} elecciones",
-        "navy",
-    )
-with card_cols[3]:
-    metric_card("Partido dividido", most_divided_label, "Más equilibrado", "red")
-with card_cols[4]:
-    metric_card(
-        "Prom. goles",
-        f"{avg_goals:.1f}",
-        "Pronosticados por partido",
-        "green",
-    )
-
-section_header(
-    "Favoritismo por partido",
-    "Qué resultado domina en cada partido según las predicciones capturadas.",
-)
-
-if match_counts.empty:
-    empty_state(
-        "Aún no hay partidos cargados",
-        "Cuando exista calendario, aquí aparecerá el favoritismo por partido.",
-        icon="⚽",
-    )
-else:
-    st.dataframe(
-        match_counts[
-            [
-                "Fecha",
-                "Grupo",
-                "Partido",
-                "Favorito según predicciones",
-                "% favorito",
-                "% empate",
-                "% rival",
-                "Marcador más popular",
-            ]
-        ],
-        hide_index=True,
-        use_container_width=True,
-    )
-
-section_header(
-    "Partidos más divididos",
-    "Top 10 de partidos donde las predicciones están más equilibradas.",
-)
-
 divided_table = pd.DataFrame()
 if not match_counts.empty:
     divided_table = (
@@ -463,52 +389,152 @@ if not match_counts.empty:
         .head(10)
     )
 
-if divided_table.empty:
-    empty_state(
-        "Aún no hay partidos divididos",
-        "Se calcularán cuando existan predicciones capturadas por partido.",
-        icon="⚖️",
-    )
-else:
-    st.dataframe(
-        divided_table[
-            [
-                "Partido",
-                "Grupo",
-                "% local",
-                "% empate",
-                "% visitante",
-                "Marcador más popular",
-            ]
-        ],
-        hide_index=True,
-        use_container_width=True,
-    )
-
-section_header(
-    "Favoritos por grupo",
-    "Ranking de equipos por veces que fueron elegidos como ganadores.",
+summary_tab, favoritism_tab, groups_tab, players_tab, post_match_tab = st.tabs(
+    [
+        "Resumen social",
+        "Favoritismo",
+        "Grupos",
+        "Jugadores",
+        "Post partido",
+    ]
 )
 
-if group_favorites.empty:
-    empty_state(
-        "Aún no hay favoritos por grupo",
-        "Se calcularán cuando existan selecciones de ganador por equipo.",
-        icon="🏆",
+with summary_tab:
+    section_header(
+        "Resumen social",
+        "Una lectura rápida de los patrones más fuertes de la quiniela.",
     )
-else:
-    st.dataframe(group_favorites, hide_index=True, use_container_width=True)
 
-section_header(
-    "Equipos menos respaldados",
-    "Top 10 de equipos con menos elecciones como ganador.",
-)
+    if predictions.empty:
+        empty_state(
+            "Aún no hay predicciones suficientes",
+            "Cuando los participantes capturen marcadores, aquí aparecerán las tendencias del grupo.",
+            icon="📈",
+        )
+    else:
+        card_cols = st.columns(5)
+        with card_cols[0]:
+            metric_card("Predicciones", str(total_predictions), "Capturadas", "green")
+        with card_cols[1]:
+            metric_card(
+                "Marcador popular",
+                popular_score,
+                f"{popular_score_count} veces",
+                "gold",
+            )
+        with card_cols[2]:
+            metric_card(
+                "Equipo favorito",
+                top_winner,
+                f"{top_winner_count} elecciones",
+                "navy",
+            )
+        with card_cols[3]:
+            metric_card("Partido dividido", most_divided_label, "Más equilibrado", "red")
+        with card_cols[4]:
+            metric_card(
+                "Prom. goles",
+                f"{avg_goals:.1f}",
+                "Pronosticados por partido",
+                "green",
+            )
 
-if least_supported.empty:
-    empty_state(
-        "Aún no hay datos suficientes",
-        "Cuando existan predicciones, aquí aparecerán los equipos menos elegidos.",
-        icon="📉",
+with favoritism_tab:
+    section_header(
+        "Favoritismo por partido",
+        "Qué resultado domina en cada partido según las predicciones capturadas.",
     )
-else:
-    st.dataframe(least_supported, hide_index=True, use_container_width=True)
+
+    if match_counts.empty:
+        empty_state(
+            "Aún no hay partidos cargados",
+            "Cuando exista calendario, aquí aparecerá el favoritismo por partido.",
+            icon="⚽",
+        )
+    else:
+        st.dataframe(
+            match_counts[
+                [
+                    "Fecha",
+                    "Grupo",
+                    "Partido",
+                    "Favorito según predicciones",
+                    "% favorito",
+                    "% empate",
+                    "% rival",
+                    "Marcador más popular",
+                ]
+            ],
+            hide_index=True,
+            use_container_width=True,
+        )
+
+    section_header(
+        "Partidos más divididos",
+        "Top 10 de partidos donde las predicciones están más equilibradas.",
+    )
+
+    if divided_table.empty:
+        empty_state(
+            "Aún no hay partidos divididos",
+            "Se calcularán cuando existan predicciones capturadas por partido.",
+            icon="⚖️",
+        )
+    else:
+        st.dataframe(
+            divided_table[
+                [
+                    "Partido",
+                    "Grupo",
+                    "% local",
+                    "% empate",
+                    "% visitante",
+                    "Marcador más popular",
+                ]
+            ],
+            hide_index=True,
+            use_container_width=True,
+        )
+
+with groups_tab:
+    section_header(
+        "Favoritos por grupo",
+        "Ranking de equipos por veces que fueron elegidos como ganadores.",
+    )
+
+    if group_favorites.empty:
+        empty_state(
+            "Aún no hay favoritos por grupo",
+            "Se calcularán cuando existan selecciones de ganador por equipo.",
+            icon="🏆",
+        )
+    else:
+        st.dataframe(group_favorites, hide_index=True, use_container_width=True)
+
+    section_header(
+        "Equipos menos respaldados",
+        "Top 10 de equipos con menos elecciones como ganador.",
+    )
+
+    if least_supported.empty:
+        empty_state(
+            "Aún no hay datos suficientes",
+            "Cuando existan predicciones, aquí aparecerán los equipos menos elegidos.",
+            icon="📉",
+        )
+    else:
+        st.dataframe(least_supported, hide_index=True, use_container_width=True)
+
+with players_tab:
+    empty_state(
+        "Próximamente: estilos de predicción por jugador.",
+        "Este espacio se usará para analizar patrones de participantes en una siguiente versión.",
+        icon="👤",
+    )
+
+with post_match_tab:
+    empty_state(
+        "Disponible cuando el admin capture resultados oficiales.",
+        "Aquí vivirán quinielazos, favoritos que cumplieron y sorpresas del torneo.",
+        icon="🏟️",
+    )
