@@ -93,10 +93,12 @@ configure_page("Mis quinielas")
 user = require_login()
 repo = get_repository_or_stop()
 data = repo.load_data()
+config = repo.get_config()
 render_sidebar(data)
 
 entries = user_entries(data, user["user_id"])
 rankings = build_rankings(entries, data[USERS], data[PREDICTIONS], data[RESULTS])
+entries_creation_enabled = as_bool(config.get("entries_creation_enabled", "TRUE"))
 
 points_by_entry = {}
 captured_by_entry = {}
@@ -184,12 +186,19 @@ st.markdown(
 section_header("Tus quinielas", "Elige cuál quieres revisar en detalle.")
 
 if entries.empty:
-    empty_state(
-        "Aún no tienes quinielas",
-        "Ve a Empieza a jugar para crear tu primera quiniela y capturar predicciones.",
-        icon="🎟️",
-    )
-    st.page_link("pages/4_Empieza_A_Jugar.py", label="Ir a Empieza A Jugar")
+    if entries_creation_enabled:
+        empty_state(
+            "Aún no tienes quinielas",
+            "Ve a Empieza A Jugar para crear tu primera quiniela.",
+            icon="🎟️",
+        )
+        st.page_link("pages/4_Empieza_A_Jugar.py", label="Ir a Empieza A Jugar")
+    else:
+        empty_state(
+            "Aún no tienes quinielas registradas.",
+            "El registro ya cerró. Puedes seguir el ranking, resultados y estadísticas del torneo.",
+            icon="🔒",
+        )
 else:
     ids = entries["entry_id"].tolist()
     review_entry_id = st.session_state.get("review_entry_id")

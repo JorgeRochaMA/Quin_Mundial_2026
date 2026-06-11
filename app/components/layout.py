@@ -68,7 +68,7 @@ def render_sidebar(data: dict[str, pd.DataFrame] | None = None) -> None:
         if user:
             st.page_link("pages/1_Ranking_En_Vivo.py", label="Ranking en vivo")
             st.page_link("pages/2_Mis_Entradas.py", label="Mis Entradas")
-            st.page_link("pages/4_Estadisticas.py", label="Estadísticas")
+            st.page_link("pages/3_Estadisticas.py", label="Estadísticas")
             st.page_link("pages/4_Empieza_A_Jugar.py", label="Empieza A Jugar")
             if user.get("role") == ROLE_ADMIN:
                 st.page_link("pages/5_Admin.py", label="Admin")
