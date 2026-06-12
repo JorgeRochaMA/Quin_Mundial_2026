@@ -2,8 +2,12 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+from datetime import datetime, timedelta
 from difflib import get_close_matches
+import hashlib
 import hmac
+import secrets
 from typing import Any
 
 from services.pool_repository import PoolRepository
@@ -17,6 +21,15 @@ class AuthError(ValueError):
 
 
 SIMILAR_NICKNAME_CUTOFF = 0.82
+PERSISTENT_SESSION_DAYS = 30
+
+
+@dataclass(frozen=True)
+class PersistentLogin:
+    """Authenticated user restored from a persistent session."""
+
+    user: dict[str, Any]
+    session_id: str
 
 
 def _same_secret(left: str, right: str) -> bool:
@@ -28,6 +41,22 @@ def _public_user(user: dict[str, Any]) -> dict[str, Any]:
     public = dict(user)
     public.pop("password_hash", None)
     return public
+
+
+def _hash_session_token(token: str) -> str:
+    """Return a stable hash for a persistent session token."""
+    return hashlib.sha256(clean_text(token).encode("utf-8")).hexdigest()
+
+
+def _parse_datetime(value: object) -> datetime | None:
+    """Parse a stored ISO datetime value."""
+    text = clean_text(value)
+    if not text:
+        return None
+    try:
+        return datetime.fromisoformat(text)
+    except ValueError:
+        return None
 
 
 def _find_similar_nickname(nickname: str, existing_nicknames: list[str]) -> str | None:
@@ -131,3 +160,50 @@ def login_or_register(
         password_hash=hash_password(password),
     )
     return _public_user(user)
+
+
+def create_persistent_login_session(
+    repo: PoolRepository,
+    user_id: str,
+    device_label: str = "Dispositivo recordado",
+) -> tuple[str, dict[str, Any]]:
+    """Create a persistent login session and return the raw token once."""
+    token = secrets.token_urlsafe(48)
+    expires_at = (datetime.now() + timedelta(days=PERSISTENT_SESSION_DAYS)).isoformat(timespec="seconds")
+    session = repo.create_persistent_session(
+        user_id=user_id,
+        token_hash=_hash_session_token(token),
+        expires_at=expires_at,
+        device_label=device_label,
+    )
+    return token, session
+
+
+def restore_persistent_login(repo: PoolRepository, token: str) -> PersistentLogin | None:
+    """Restore a user from a persistent session token if it is valid."""
+    token = clean_text(token)
+    if not token:
+        return None
+
+    session = repo.find_active_session_by_token_hash(_hash_session_token(token))
+    if not session:
+        return None
+
+    session_id = clean_text(session.get("session_id"))
+    expires_at = _parse_datetime(session.get("expires_at"))
+
+    if not session_id or expires_at is None or expires_at <= datetime.now():
+        if session_id:
+            repo.revoke_session(session_id)
+        return None
+
+    user = repo.find_user_by_id(clean_text(session.get("user_id")))
+    if not user:
+        repo.revoke_session(session_id)
+        return None
+
+    if clean_text(user.get("role")).upper() != ROLE_USER:
+        repo.revoke_session(session_id)
+        return None
+
+    return PersistentLogin(user=_public_user(user), session_id=session_id)

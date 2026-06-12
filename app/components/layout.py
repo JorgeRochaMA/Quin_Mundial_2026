@@ -8,7 +8,9 @@ from typing import Any
 import pandas as pd
 import streamlit as st
 
-from services.runtime import is_demo_mode
+from components.cookies import get_remember_cookie, render_clear_remember_cookie
+from services.auth import restore_persistent_login
+from services.runtime import get_repository_or_stop, is_demo_mode
 from utils.constants import ENTRIES, ROLE_ADMIN
 from utils.data import as_bool
 
@@ -31,7 +33,34 @@ def configure_page(title: str) -> None:
 
 def current_user() -> dict[str, Any] | None:
     """Return the logged-in user from session state."""
-    return st.session_state.get("user")
+    user = st.session_state.get("user")
+    if user:
+        return user
+
+    if st.session_state.get("_persistent_login_checked"):
+        return None
+
+    st.session_state["_persistent_login_checked"] = True
+    token = get_remember_cookie()
+    if not token:
+        return None
+
+    repo = get_repository_or_stop()
+    restored = restore_persistent_login(repo, token)
+
+    if not restored:
+        render_clear_remember_cookie()
+        return None
+
+    st.session_state["user"] = restored.user
+    st.session_state["persistent_session_id"] = restored.session_id
+
+    data = repo.load_data()
+    entries = user_entries(data, restored.user.get("user_id", ""))
+    if not entries.empty:
+        st.session_state["active_entry_id"] = entries.iloc[0].get("entry_id")
+
+    return restored.user
 
 
 def require_login() -> dict[str, Any]:
@@ -113,8 +142,13 @@ def render_sidebar(data: dict[str, pd.DataFrame] | None = None) -> None:
                 st.info("Aún no tienes quinielas.")
 
         if st.button("Cerrar sesión", use_container_width=True):
+            session_id = st.session_state.get("persistent_session_id")
+            if session_id:
+                repo = get_repository_or_stop()
+                repo.revoke_session(session_id)
             st.session_state.clear()
-            st.rerun()
+            render_clear_remember_cookie(reload_parent=True)
+            st.stop()
 
         if is_demo_mode() and st.button("Reiniciar demo", use_container_width=True):
             user_backup = st.session_state.get("user")

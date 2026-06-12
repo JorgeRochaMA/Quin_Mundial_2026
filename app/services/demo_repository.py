@@ -17,6 +17,7 @@ from utils.constants import (
     RESULTS,
     ROLE_ADMIN,
     ROLE_USER,
+    SESSIONS,
     SHEET_COLUMNS,
     STATUS_FINISHED,
     STATUS_LOCKED,
@@ -48,6 +49,17 @@ class DemoPoolRepository:
         """Initialize demo data once per browser session."""
         if DEMO_STORAGE_KEY not in st.session_state:
             st.session_state[DEMO_STORAGE_KEY] = _build_seed_data()
+            return
+
+        data = st.session_state[DEMO_STORAGE_KEY]
+        for sheet_name, columns in SHEET_COLUMNS.items():
+            if sheet_name not in data:
+                data[sheet_name] = pd.DataFrame(columns=columns)
+                continue
+
+            for column in columns:
+                if column not in data[sheet_name].columns:
+                    data[sheet_name][column] = ""
 
     def load_data(self) -> dict[str, pd.DataFrame]:
         """Load all demo tables."""
@@ -80,6 +92,16 @@ class DemoPoolRepository:
         users = self._df(USERS)
         normalized = clean_text(nickname).lower()
         matches = users[users["nickname"].str.strip().str.lower() == normalized]
+        if matches.empty:
+            return None
+        user = matches.iloc[0].to_dict()
+        return user if as_bool(user.get("active", "TRUE")) else None
+
+    def find_user_by_id(self, user_id: str) -> dict[str, Any] | None:
+        """Find an active demo user by id."""
+        user_id = validate_resource_id(user_id, "user_id")
+        users = self._df(USERS)
+        matches = users[users["user_id"] == user_id]
         if matches.empty:
             return None
         user = matches.iloc[0].to_dict()
@@ -129,6 +151,7 @@ class DemoPoolRepository:
         user = match.iloc[0].to_dict()
         user["password_hash"] = clean_text(password_hash)
         self._upsert(USERS, user, ["user_id"])
+        self.revoke_user_sessions(user_id)
 
     def update_user_password(self, user_id: str, new_password: str) -> bool:
         """Set a new password hash for a demo user."""
@@ -145,6 +168,7 @@ class DemoPoolRepository:
         user = match.iloc[0].to_dict()
         user["password_hash"] = hash_password(new_password)
         self._upsert(USERS, user, ["user_id"])
+        self.revoke_user_sessions(user_id)
 
         return True
 
@@ -197,8 +221,85 @@ class DemoPoolRepository:
         self._replace(USERS, updated_users)
         self._replace(ENTRIES, updated_entries)
         self._replace(PREDICTIONS, updated_predictions)
+        self.revoke_user_sessions(user_id)
 
         return True
+
+    def create_persistent_session(
+        self,
+        user_id: str,
+        token_hash: str,
+        expires_at: str,
+        device_label: str = "",
+    ) -> dict[str, Any]:
+        """Create a demo persistent login session."""
+        user_id = validate_resource_id(user_id, "user_id")
+        session = {
+            "session_id": uuid4().hex,
+            "user_id": user_id,
+            "token_hash": clean_text(token_hash),
+            "created_at": now_iso(),
+            "expires_at": clean_text(expires_at),
+            "active": True,
+            "device_label": clean_text(device_label)[:80],
+        }
+        self._append(SESSIONS, session)
+        return session
+
+    def find_active_session_by_token_hash(self, token_hash: str) -> dict[str, Any] | None:
+        """Find an active demo persistent session by token hash."""
+        token_hash = clean_text(token_hash)
+        if not token_hash:
+            return None
+
+        sessions = self._df(SESSIONS)
+        if sessions.empty:
+            return None
+
+        matches = sessions[
+            (sessions["token_hash"] == token_hash)
+            & (sessions["active"].apply(as_bool))
+        ]
+
+        if matches.empty:
+            return None
+
+        return matches.iloc[0].to_dict()
+
+    def revoke_session(self, session_id: str) -> bool:
+        """Mark one demo persistent session as inactive."""
+        session_id = validate_resource_id(session_id, "session_id")
+        sessions = self._df(SESSIONS)
+        match = sessions[sessions["session_id"] == session_id]
+        if match.empty:
+            return False
+
+        session = match.iloc[0].to_dict()
+        session["active"] = False
+        self._upsert(SESSIONS, session, ["session_id"])
+
+        return True
+
+    def revoke_user_sessions(self, user_id: str) -> int:
+        """Mark all demo persistent sessions for a user as inactive."""
+        user_id = validate_resource_id(user_id, "user_id")
+        sessions = self._df(SESSIONS)
+        if sessions.empty:
+            return 0
+
+        updated = 0
+        records = []
+        for _, row in sessions.iterrows():
+            record = row.to_dict()
+            if record.get("user_id") == user_id and as_bool(record.get("active")):
+                record["active"] = False
+                updated += 1
+            records.append(record)
+
+        if updated:
+            self._replace(SESSIONS, records)
+
+        return updated
 
     def create_entry(self, user_id: str, entry_name: str) -> dict[str, Any]:
         """Create a demo prediction entry."""
@@ -573,5 +674,6 @@ def _build_seed_data() -> dict[str, pd.DataFrame]:
             ],
             columns=SHEET_COLUMNS[PREDICTIONS],
         ),
+        SESSIONS: pd.DataFrame(columns=SHEET_COLUMNS[SESSIONS]),
     }
     return data

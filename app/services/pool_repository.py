@@ -15,6 +15,7 @@ from utils.constants import (
     MATCHES,
     PREDICTIONS,
     RESULTS,
+    SESSIONS,
     SHEET_COLUMNS,
     USERS,
     ROLE_ADMIN,
@@ -140,6 +141,22 @@ class PoolRepository:
         user = matches.iloc[0].to_dict()
         return user if as_bool(user.get("active", "TRUE")) else None
 
+    def find_user_by_id(self, user_id: str) -> dict[str, Any] | None:
+        """Find an active user by id."""
+        user_id = validate_resource_id(user_id, "user_id")
+        users = self._read_sheet(USERS)
+
+        if users.empty:
+            return None
+
+        matches = users[users["user_id"] == user_id]
+
+        if matches.empty:
+            return None
+
+        user = matches.iloc[0].to_dict()
+        return user if as_bool(user.get("active", "TRUE")) else None
+
     def list_active_user_nicknames(self) -> list[str]:
         """Return nicknames for active users."""
         users = self._read_sheet(USERS)
@@ -198,6 +215,7 @@ class PoolRepository:
         user["password_hash"] = clean_text(password_hash)
 
         self.sheets.upsert_record(USERS, user, SHEET_COLUMNS[USERS], ["user_id"])
+        self.revoke_user_sessions(user_id)
         self._invalidate(USERS)
 
     def update_user_password(self, user_id: str, new_password: str) -> bool:
@@ -221,6 +239,7 @@ class PoolRepository:
         user["password_hash"] = hash_password(new_password)
 
         self.sheets.upsert_record(USERS, user, SHEET_COLUMNS[USERS], ["user_id"])
+        self.revoke_user_sessions(user_id)
         self._invalidate(USERS)
 
         return True
@@ -289,10 +308,100 @@ class PoolRepository:
         self.sheets.replace_records(USERS, updated_users, SHEET_COLUMNS[USERS])
         self.sheets.replace_records(ENTRIES, updated_entries, SHEET_COLUMNS[ENTRIES])
         self.sheets.replace_records(PREDICTIONS, updated_predictions, SHEET_COLUMNS[PREDICTIONS])
+        self.revoke_user_sessions(user_id)
 
-        self._invalidate(USERS, ENTRIES, PREDICTIONS)
+        self._invalidate(USERS, ENTRIES, PREDICTIONS, SESSIONS)
 
         return True
+
+    def create_persistent_session(
+        self,
+        user_id: str,
+        token_hash: str,
+        expires_at: str,
+        device_label: str = "",
+    ) -> dict[str, Any]:
+        """Create a persistent login session."""
+        user_id = validate_resource_id(user_id, "user_id")
+        session = {
+            "session_id": uuid4().hex,
+            "user_id": user_id,
+            "token_hash": clean_text(token_hash),
+            "created_at": now_iso(),
+            "expires_at": clean_text(expires_at),
+            "active": True,
+            "device_label": clean_text(device_label)[:80],
+        }
+
+        self.sheets.append_record(SESSIONS, session, SHEET_COLUMNS[SESSIONS])
+        self._invalidate(SESSIONS)
+
+        return session
+
+    def find_active_session_by_token_hash(self, token_hash: str) -> dict[str, Any] | None:
+        """Find an active persistent session by token hash."""
+        token_hash = clean_text(token_hash)
+        if not token_hash:
+            return None
+
+        sessions = self._read_sheet(SESSIONS)
+
+        if sessions.empty:
+            return None
+
+        matches = sessions[
+            (sessions["token_hash"] == token_hash)
+            & (sessions["active"].apply(as_bool))
+        ]
+
+        if matches.empty:
+            return None
+
+        return matches.iloc[0].to_dict()
+
+    def revoke_session(self, session_id: str) -> bool:
+        """Mark one persistent session as inactive."""
+        session_id = validate_resource_id(session_id, "session_id")
+        sessions = self._read_sheet(SESSIONS)
+
+        if sessions.empty:
+            return False
+
+        match = sessions[sessions["session_id"] == session_id]
+
+        if match.empty:
+            return False
+
+        session = match.iloc[0].to_dict()
+        session["active"] = False
+
+        self.sheets.upsert_record(SESSIONS, session, SHEET_COLUMNS[SESSIONS], ["session_id"])
+        self._invalidate(SESSIONS)
+
+        return True
+
+    def revoke_user_sessions(self, user_id: str) -> int:
+        """Mark all persistent sessions for a user as inactive."""
+        user_id = validate_resource_id(user_id, "user_id")
+        sessions = self._read_sheet(SESSIONS)
+
+        if sessions.empty:
+            return 0
+
+        updated = 0
+        records = []
+        for _, row in sessions.iterrows():
+            record = row.to_dict()
+            if record.get("user_id") == user_id and as_bool(record.get("active")):
+                record["active"] = False
+                updated += 1
+            records.append(record)
+
+        if updated:
+            self.sheets.replace_records(SESSIONS, records, SHEET_COLUMNS[SESSIONS])
+            self._invalidate(SESSIONS)
+
+        return updated
 
     def create_entry(self, user_id: str, entry_name: str) -> dict[str, Any]:
         """Create a prediction entry for a user."""

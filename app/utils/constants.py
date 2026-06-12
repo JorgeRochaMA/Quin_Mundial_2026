@@ -6,6 +6,7 @@ ENTRIES = "ENTRIES"
 MATCHES = "MATCHES"
 RESULTS = "RESULTS"
 PREDICTIONS = "PREDICTIONS"
+SESSIONS = "SESSIONS"
 
 ROLE_USER = "USER"
 ROLE_ADMIN = "ADMIN"
@@ -55,6 +56,15 @@ SHEET_COLUMNS = {
         "pred_away_goals",
         "points",
         "submitted_at",
+    ],
+    SESSIONS: [
+        "session_id",
+        "user_id",
+        "token_hash",
+        "created_at",
+        "expires_at",
+        "active",
+        "device_label",
     ],
 }
 
