@@ -165,7 +165,7 @@ def login_or_register(
 def create_persistent_login_session(
     repo: PoolRepository,
     user_id: str,
-    device_label: str = "Dispositivo recordado",
+    device_label: str = "Navegador recordado",
 ) -> tuple[str, dict[str, Any]]:
     """Create a persistent login session and return the raw token once."""
     token = secrets.token_urlsafe(48)
@@ -207,3 +207,20 @@ def restore_persistent_login(repo: PoolRepository, token: str) -> PersistentLogi
         return None
 
     return PersistentLogin(user=_public_user(user), session_id=session_id)
+
+
+def revoke_persistent_login_token(repo: PoolRepository, token: str) -> bool:
+    """Revoke a persistent session by raw cookie token."""
+    token = clean_text(token)
+    if not token:
+        return False
+
+    session = repo.find_active_session_by_token_hash(_hash_session_token(token))
+    if not session:
+        return False
+
+    session_id = clean_text(session.get("session_id"))
+    if not session_id:
+        return False
+
+    return repo.revoke_session(session_id)

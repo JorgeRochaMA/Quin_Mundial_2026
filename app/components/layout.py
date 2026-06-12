@@ -8,8 +8,8 @@ from typing import Any
 import pandas as pd
 import streamlit as st
 
-from components.cookies import get_remember_cookie, render_clear_remember_cookie
-from services.auth import restore_persistent_login
+from components.cookies import get_remember_cookie, render_clear_remember_cookie, render_set_remember_cookie
+from services.auth import restore_persistent_login, revoke_persistent_login_token
 from services.runtime import get_repository_or_stop, is_demo_mode
 from utils.constants import ENTRIES, ROLE_ADMIN
 from utils.data import as_bool
@@ -31,11 +31,56 @@ def configure_page(title: str) -> None:
     load_css()
 
 
+def set_authenticated_session(
+    user: dict[str, Any],
+    data: dict[str, pd.DataFrame] | None = None,
+    session_id: str | None = None,
+) -> None:
+    """Store the authenticated user in Streamlit session state."""
+    public_user = {
+        "user_id": user.get("user_id", ""),
+        "nickname": user.get("nickname", ""),
+        "role": user.get("role", ""),
+        "active": user.get("active", True),
+    }
+
+    st.session_state["authenticated"] = True
+    st.session_state["user_id"] = public_user["user_id"]
+    st.session_state["nickname"] = public_user["nickname"]
+    st.session_state["role"] = public_user["role"]
+    st.session_state["user"] = public_user
+
+    if session_id:
+        st.session_state["persistent_session_id"] = session_id
+
+    if data is not None:
+        entries = user_entries(data, public_user["user_id"])
+        if not entries.empty:
+            current = st.session_state.get("active_entry_id")
+            ids = entries["entry_id"].tolist()
+            if current not in ids:
+                st.session_state["active_entry_id"] = ids[0]
+
+
 def current_user() -> dict[str, Any] | None:
-    """Return the logged-in user from session state."""
-    user = st.session_state.get("user")
-    if user:
-        return user
+    """Return the logged-in user from session state or a valid persistent cookie."""
+    if st.session_state.get("authenticated"):
+        user = st.session_state.get("user")
+        if user:
+            return user
+
+        user_id = st.session_state.get("user_id")
+        nickname = st.session_state.get("nickname")
+        role = st.session_state.get("role")
+        if user_id and nickname and role:
+            user = {
+                "user_id": user_id,
+                "nickname": nickname,
+                "role": role,
+                "active": True,
+            }
+            st.session_state["user"] = user
+            return user
 
     if st.session_state.get("_persistent_login_checked"):
         return None
@@ -52,15 +97,9 @@ def current_user() -> dict[str, Any] | None:
         render_clear_remember_cookie()
         return None
 
-    st.session_state["user"] = restored.user
-    st.session_state["persistent_session_id"] = restored.session_id
-
     data = repo.load_data()
-    entries = user_entries(data, restored.user.get("user_id", ""))
-    if not entries.empty:
-        st.session_state["active_entry_id"] = entries.iloc[0].get("entry_id")
-
-    return restored.user
+    set_authenticated_session(restored.user, data, restored.session_id)
+    st.rerun()
 
 
 def require_login() -> dict[str, Any]:
@@ -93,6 +132,11 @@ def user_entries(data: dict[str, pd.DataFrame], user_id: str) -> pd.DataFrame:
 def render_sidebar(data: dict[str, pd.DataFrame] | None = None) -> None:
     """Render session details, entry selector, and logout."""
     user = current_user()
+    pending_token = st.session_state.pop("_pending_remember_token", "")
+    pending_expires_at = st.session_state.pop("_pending_remember_expires_at", "")
+    if pending_token and pending_expires_at:
+        render_set_remember_cookie(pending_token, pending_expires_at)
+
     with st.sidebar:
         if user:
             st.page_link("pages/1_Ranking_En_Vivo.py", label="Ranking en vivo")
@@ -142,13 +186,16 @@ def render_sidebar(data: dict[str, pd.DataFrame] | None = None) -> None:
                 st.info("Aún no tienes quinielas.")
 
         if st.button("Cerrar sesión", use_container_width=True):
+            repo = get_repository_or_stop()
             session_id = st.session_state.get("persistent_session_id")
+            token = get_remember_cookie()
             if session_id:
-                repo = get_repository_or_stop()
                 repo.revoke_session(session_id)
+            if token:
+                revoke_persistent_login_token(repo, token)
+            render_clear_remember_cookie()
             st.session_state.clear()
-            render_clear_remember_cookie(reload_parent=True)
-            st.stop()
+            st.rerun()
 
         if is_demo_mode() and st.button("Reiniciar demo", use_container_width=True):
             user_backup = st.session_state.get("user")
