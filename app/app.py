@@ -7,13 +7,7 @@ from textwrap import dedent
 import streamlit as st
 
 from components.cookies import render_set_remember_cookie
-from components.layout import (
-    build_quick_access_link,
-    configure_page,
-    current_user,
-    render_sidebar,
-    set_authenticated_session,
-)
+from components.layout import configure_page, current_user, render_sidebar, set_authenticated_session
 from components.ui import page_hero, section_header
 from services.auth import AuthError, create_persistent_login_session, login_or_register
 from services.runtime import get_repository_or_stop
@@ -22,11 +16,10 @@ from utils.constants import ROLE_ADMIN
 
 configure_page("Ingreso")
 repo = get_repository_or_stop()
+render_sidebar()
 
 if current_user():
     st.switch_page("pages/1_Ranking_En_Vivo.py")
-
-render_sidebar()
 
 page_hero(
     "Quiniela Mundial 2026",
@@ -124,11 +117,6 @@ if submitted:
             st.session_state["persistent_session_id"] = persistent_session["session_id"]
             st.session_state["_pending_remember_token"] = token
             st.session_state["_pending_remember_expires_at"] = persistent_session["expires_at"]
-            st.session_state["_remember_login_message"] = (
-                "Listo, este dispositivo quedó recordado. Si vuelves a entrar desde este navegador, "
-                "no tendrás que iniciar sesión."
-            )
-            st.session_state["_remember_quick_link"] = build_quick_access_link(token)
             render_set_remember_cookie(token, persistent_session["expires_at"])
 
         st.rerun()

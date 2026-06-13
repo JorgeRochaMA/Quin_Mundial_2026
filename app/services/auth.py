@@ -30,7 +30,6 @@ class PersistentLogin:
 
     user: dict[str, Any]
     session_id: str
-    expires_at: str
 
 
 def _same_secret(left: str, right: str) -> bool:
@@ -207,11 +206,7 @@ def restore_persistent_login(repo: PoolRepository, token: str) -> PersistentLogi
         repo.revoke_session(session_id)
         return None
 
-    return PersistentLogin(
-        user=_public_user(user),
-        session_id=session_id,
-        expires_at=clean_text(session.get("expires_at")),
-    )
+    return PersistentLogin(user=_public_user(user), session_id=session_id)
 
 
 def revoke_persistent_login_token(repo: PoolRepository, token: str) -> bool:
