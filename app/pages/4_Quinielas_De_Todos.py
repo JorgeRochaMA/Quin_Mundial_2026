@@ -149,24 +149,35 @@ if rankings.empty:
     )
     st.stop()
 
+selector_rankings = rankings.copy()
+selector_rankings["_entry_sort"] = selector_rankings["entry_name"].apply(
+    lambda value: clean_text(value).lower()
+)
+selector_rankings["_nickname_sort"] = selector_rankings["nickname"].apply(
+    lambda value: clean_text(value).lower()
+)
+selector_rankings = selector_rankings.sort_values(
+    ["_entry_sort", "_nickname_sort"],
+    ascending=[True, True],
+).reset_index(drop=True)
+
 
 def _selector_label(entry_id: str) -> str:
     """Return the selectbox label for one active entry."""
-    row = rankings[rankings["entry_id"] == entry_id].iloc[0]
+    row = selector_rankings[selector_rankings["entry_id"] == entry_id].iloc[0]
     entry_name = clean_text(row.get("entry_name")) or "Quiniela"
     nickname = clean_text(row.get("nickname")) or "Sin apodo"
-    captured = as_int(row.get("predictions_count"), 0)
-    return f"{entry_name} · {nickname} · {captured}/{total_matches} predicciones"
+    return f"{entry_name} · {nickname}"
 
 
-entry_ids = rankings["entry_id"].tolist()
+entry_ids = selector_rankings["entry_id"].tolist()
 selected_entry_id = st.selectbox(
     "Selecciona una quiniela",
     entry_ids,
     format_func=_selector_label,
 )
 
-selected_ranking = rankings[rankings["entry_id"] == selected_entry_id].iloc[0]
+selected_ranking = selector_rankings[selector_rankings["entry_id"] == selected_entry_id].iloc[0]
 selected_entry_name = clean_text(selected_ranking.get("entry_name")) or "Quiniela"
 selected_nickname = clean_text(selected_ranking.get("nickname")) or "Sin apodo"
 selected_points = as_int(selected_ranking.get("total_points"), 0)
