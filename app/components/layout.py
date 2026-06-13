@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit, urlunsplit
 
 import pandas as pd
 import streamlit as st
@@ -29,6 +30,41 @@ def configure_page(title: str) -> None:
         layout="wide",
     )
     load_css()
+
+
+def _get_query_session_token() -> str:
+    """Return a persistent session token from the URL query params."""
+    try:
+        value = st.query_params.get("session", "")
+    except Exception:
+        return ""
+
+    if isinstance(value, list):
+        return str(value[0] if value else "").strip()
+
+    return str(value or "").strip()
+
+
+def _clear_query_params() -> None:
+    """Clear query params without interrupting the app."""
+    try:
+        st.query_params.clear()
+    except Exception:
+        return
+
+
+def build_quick_access_link(token: str) -> str:
+    """Build a quick access URL with the session token in the query string."""
+    try:
+        current_url = st.context.url
+    except Exception:
+        current_url = ""
+
+    if not current_url:
+        return f"?session={token}"
+
+    parts = urlsplit(current_url)
+    return urlunsplit((parts.scheme, parts.netloc, parts.path, f"session={token}", ""))
 
 
 def set_authenticated_session(
@@ -86,19 +122,35 @@ def current_user() -> dict[str, Any] | None:
         return None
 
     st.session_state["_persistent_login_checked"] = True
-    token = get_remember_cookie()
-    if not token:
+    cookie_token = get_remember_cookie()
+    query_token = _get_query_session_token()
+    if not cookie_token and not query_token:
         return None
 
     repo = get_repository_or_stop()
-    restored = restore_persistent_login(repo, token)
+    if cookie_token:
+        restored = restore_persistent_login(repo, cookie_token)
+        if restored:
+            data = repo.load_data()
+            set_authenticated_session(restored.user, data, restored.session_id)
+            st.rerun()
 
+        render_clear_remember_cookie()
+
+    if not query_token:
+        return None
+
+    restored = restore_persistent_login(repo, query_token)
     if not restored:
+        _clear_query_params()
         render_clear_remember_cookie()
         return None
 
     data = repo.load_data()
     set_authenticated_session(restored.user, data, restored.session_id)
+    st.session_state["_pending_remember_token"] = query_token
+    st.session_state["_pending_remember_expires_at"] = restored.expires_at
+    _clear_query_params()
     st.rerun()
 
 
@@ -137,6 +189,9 @@ def render_sidebar(data: dict[str, pd.DataFrame] | None = None) -> None:
     if pending_token and pending_expires_at:
         render_set_remember_cookie(pending_token, pending_expires_at)
 
+    remember_message = st.session_state.pop("_remember_login_message", "")
+    quick_link = st.session_state.pop("_remember_quick_link", "")
+
     with st.sidebar:
         if user:
             st.page_link("pages/1_Ranking_En_Vivo.py", label="Ranking en vivo")
@@ -164,6 +219,12 @@ def render_sidebar(data: dict[str, pd.DataFrame] | None = None) -> None:
         if not user:
             st.info("Sin sesión activa")
             return
+
+        if remember_message:
+            st.success(remember_message)
+        if quick_link:
+            st.caption("Guarda este enlace para entrar directo desde este dispositivo.")
+            st.markdown(f"[Abrir enlace de acceso rápido]({quick_link})")
 
         st.caption(f"👤 {user.get('nickname', '')}")
         if user.get("role") == ROLE_ADMIN:
@@ -194,6 +255,7 @@ def render_sidebar(data: dict[str, pd.DataFrame] | None = None) -> None:
             if token:
                 revoke_persistent_login_token(repo, token)
             render_clear_remember_cookie()
+            _clear_query_params()
             st.session_state.clear()
             st.rerun()
 
