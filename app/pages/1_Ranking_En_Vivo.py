@@ -205,14 +205,10 @@ def _render_rankings(rankings: pd.DataFrame) -> None:
             "predictions_count": "Predicciones",
         }
     )
-    table["Pago"] = table["paid"].apply(
-        lambda value: "✅ Pagada" if as_bool(value) else "⏳ Pendiente"
-    )
     columns = [
         "Posición",
         "Quiniela",
         "Nickname",
-        "Pago",
         "Puntos",
         "Marcadores exactos",
         "Predicciones",
