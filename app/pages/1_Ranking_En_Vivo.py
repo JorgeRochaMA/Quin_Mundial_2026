@@ -15,6 +15,7 @@ from utils.constants import ENTRIES, MATCHES, PREDICTIONS, RESULTS, USERS
 from utils.data import as_bool, as_float, as_int, clean_text
 from utils.prizes import calculate_prizes, format_mxn
 from utils.rankings import build_rankings
+from utils.scoring import is_exact_score, result_from_score
 
 
 def _clean_html(markup: str) -> str:
@@ -122,7 +123,11 @@ def _render_official_results(matches: pd.DataFrame, results: pd.DataFrame) -> No
         return
 
     merged["_parsed_date"] = pd.to_datetime(merged["match_date"], errors="coerce")
-    merged = merged.sort_values(["_parsed_date", "match_id"], na_position="last")
+    merged = merged.sort_values(
+        ["_parsed_date", "match_id"],
+        ascending=[False, False],
+        na_position="last",
+    )
 
     table = pd.DataFrame(
         [
@@ -145,6 +150,214 @@ def _render_official_results(matches: pd.DataFrame, results: pd.DataFrame) -> No
     )
 
     st.dataframe(table, hide_index=True, use_container_width=True)
+
+
+def _official_matches(matches: pd.DataFrame, results: pd.DataFrame) -> pd.DataFrame:
+    """Return matches joined with official scores."""
+    if matches.empty or results.empty:
+        return pd.DataFrame()
+
+    scored_results = results[
+        results["home_score"].apply(clean_text).ne("")
+        & results["away_score"].apply(clean_text).ne("")
+    ].copy()
+
+    if scored_results.empty:
+        return pd.DataFrame()
+
+    scored_results = scored_results.drop_duplicates("match_id", keep="last")
+    merged = matches.merge(scored_results, on="match_id", how="inner")
+    if merged.empty:
+        return pd.DataFrame()
+
+    merged["_parsed_date"] = pd.to_datetime(merged["match_date"], errors="coerce")
+    return merged.sort_values(
+        ["_parsed_date", "match_id"],
+        ascending=[False, False],
+        na_position="last",
+    )
+
+
+def _build_accuracy_radiography(
+    entries: pd.DataFrame,
+    matches: pd.DataFrame,
+    predictions: pd.DataFrame,
+    results: pd.DataFrame,
+) -> pd.DataFrame:
+    """Build visual post-match accuracy metrics without changing scoring."""
+    official_matches = _official_matches(matches, results)
+    if official_matches.empty:
+        return pd.DataFrame()
+
+    if entries.empty or predictions.empty:
+        scoped_predictions = pd.DataFrame(columns=predictions.columns)
+    else:
+        active_entries = entries.copy()
+        if "active" in active_entries:
+            active_entries = active_entries[active_entries["active"].apply(as_bool)]
+        active_entry_ids = set(active_entries["entry_id"].apply(clean_text))
+        scoped_predictions = predictions[
+            predictions["entry_id"].apply(clean_text).isin(active_entry_ids)
+        ].copy()
+
+    rows = []
+    for _, match in official_matches.iterrows():
+        match_id = clean_text(match.get("match_id"))
+        home_team = clean_text(match.get("home_team")) or "Local"
+        away_team = clean_text(match.get("away_team")) or "Visitante"
+        home_score = as_int(match.get("home_score"), 0)
+        away_score = as_int(match.get("away_score"), 0)
+        official_result = result_from_score(home_score, away_score)
+
+        match_predictions = pd.DataFrame()
+        if not scoped_predictions.empty:
+            match_predictions = scoped_predictions[
+                scoped_predictions["match_id"].apply(clean_text).eq(match_id)
+            ]
+
+        total_predictions = len(match_predictions)
+        result_hits = 0
+        exact_hits = 0
+        if not match_predictions.empty:
+            result_hits = int(
+                match_predictions["selected_result"]
+                .apply(lambda value: clean_text(value) == official_result)
+                .sum()
+            )
+            exact_hits = int(
+                match_predictions.apply(
+                    lambda row: is_exact_score(
+                        row.get("pred_home_goals"),
+                        row.get("pred_away_goals"),
+                        home_score,
+                        away_score,
+                    ),
+                    axis=1,
+                ).sum()
+            )
+
+        rows.append(
+            {
+                "match_id": match_id,
+                "Fecha": _short_date(match.get("match_date")),
+                "Partido": f"{home_team} vs {away_team}",
+                "Marcador oficial": f"{home_score} - {away_score}",
+                "Aciertos resultado": result_hits,
+                "Marcadores exactos": exact_hits,
+                "total_predictions": total_predictions,
+                "_parsed_date": match.get("_parsed_date"),
+            }
+        )
+
+    return pd.DataFrame(rows)
+
+
+def _render_accuracy_bars(radiography: pd.DataFrame) -> None:
+    """Render compact horizontal accuracy bars."""
+    rows = []
+    for _, row in radiography.iterrows():
+        total_predictions = as_int(row.get("total_predictions"), 0)
+        result_hits = as_int(row.get("Aciertos resultado"), 0)
+        exact_hits = as_int(row.get("Marcadores exactos"), 0)
+        result_pct = 0 if total_predictions <= 0 else min(100, (result_hits / total_predictions) * 100)
+        exact_pct = 0 if total_predictions <= 0 else min(100, (exact_hits / total_predictions) * 100)
+        rows.append(
+            f"""
+            <div class="qm-accuracy-row">
+                <div class="qm-accuracy-match">
+                    <strong>{escape(clean_text(row.get("Partido")) or "Partido")}</strong>
+                    <span>{escape(clean_text(row.get("Fecha")) or "-")} · Marcador {escape(clean_text(row.get("Marcador oficial")) or "-")} · {total_predictions} predicciones</span>
+                </div>
+                <div class="qm-accuracy-bars">
+                    <div class="qm-accuracy-bar-line">
+                        <span>Resultado</span>
+                        <div class="qm-accuracy-track">
+                            <div class="qm-accuracy-fill qm-accuracy-fill-result" style="width: {result_pct:.1f}%"></div>
+                        </div>
+                        <strong>{result_hits}</strong>
+                    </div>
+                    <div class="qm-accuracy-bar-line">
+                        <span>Exactos</span>
+                        <div class="qm-accuracy-track">
+                            <div class="qm-accuracy-fill qm-accuracy-fill-exact" style="width: {exact_pct:.1f}%"></div>
+                        </div>
+                        <strong>{exact_hits}</strong>
+                    </div>
+                </div>
+            </div>
+            """
+        )
+
+    st.markdown(
+        _clean_html(
+            f"""
+            <section class="qm-accuracy-panel">
+                {"".join(rows)}
+            </section>
+            """
+        ),
+        unsafe_allow_html=True,
+    )
+
+
+def _render_accuracy_radiography(
+    entries: pd.DataFrame,
+    matches: pd.DataFrame,
+    predictions: pd.DataFrame,
+    results: pd.DataFrame,
+) -> None:
+    """Render post-match accuracy insights."""
+    radiography = _build_accuracy_radiography(entries, matches, predictions, results)
+    if radiography.empty:
+        empty_state(
+            "Radiografía pendiente",
+            "Cuando se capturen resultados oficiales, aquí aparecerá la radiografía de aciertos.",
+            icon="📊",
+        )
+        return
+
+    hardest = radiography.sort_values(
+        ["Marcadores exactos", "Aciertos resultado", "Partido"],
+        ascending=[True, True, True],
+    ).iloc[0]
+
+    st.markdown(
+        f"""
+        <section class="qm-status-panel qm-status-panel-four">
+            <div class="qm-status-panel-item">
+                <span class="qm-status-panel-icon">✅</span>
+                <span>
+                    <strong>{len(radiography)}</strong>
+                    <small>Partidos oficiales</small>
+                </span>
+            </div>
+            <div class="qm-status-panel-item">
+                <span class="qm-status-panel-icon">🎯</span>
+                <span>
+                    <strong>{int(radiography["Aciertos resultado"].sum())}</strong>
+                    <small>Aciertos de resultado</small>
+                </span>
+            </div>
+            <div class="qm-status-panel-item qm-status-panel-money">
+                <span class="qm-status-panel-icon">🏆</span>
+                <span>
+                    <strong>{int(radiography["Marcadores exactos"].sum())}</strong>
+                    <small>Marcadores exactos</small>
+                </span>
+            </div>
+            <div class="qm-status-panel-item qm-status-panel-wrap">
+                <span class="qm-status-panel-icon">🧩</span>
+                <span>
+                    <strong>{escape(clean_text(hardest.get("Partido")) or "-")}</strong>
+                    <small>Partido más difícil</small>
+                </span>
+            </div>
+        </section>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    _render_accuracy_bars(radiography)
 
 
 def _render_podium(rankings: pd.DataFrame) -> None:
@@ -406,3 +619,7 @@ _render_rankings(rankings)
 st.markdown("### Resultados oficiales")
 st.caption("Partidos con marcador oficial capturado.")
 _render_official_results(matches, data[RESULTS])
+
+st.markdown("### Radiografía de aciertos")
+st.caption("Qué tan bien leyó la quiniela cada partido con resultado oficial.")
+_render_accuracy_radiography(entries, matches, data[PREDICTIONS], data[RESULTS])

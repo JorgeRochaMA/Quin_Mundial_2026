@@ -502,6 +502,10 @@ div[data-testid="stDataFrame"] [role="gridcell"] {
     color: var(--qm-green);
 }
 
+.qm-status-panel-wrap strong {
+    white-space: normal;
+}
+
 .qm-status-panel-four {
     grid-template-columns: repeat(4, minmax(0, 1fr));
 }
@@ -672,6 +676,99 @@ div[data-testid="stDataFrame"] [role="gridcell"] {
     font-size: 1.35rem;
     font-weight: 950;
     margin-top: 0.65rem;
+}
+
+.qm-accuracy-panel {
+    background: var(--qm-panel-strong);
+    border: 1px solid rgba(220, 229, 236, 0.95);
+    border-top: 4px solid var(--qm-navy-2);
+    border-radius: 8px;
+    box-shadow: var(--qm-shadow);
+    margin: 0.55rem 0 1.05rem;
+    max-height: 660px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.qm-accuracy-row {
+    border-bottom: 1px solid rgba(220, 229, 236, 0.76);
+    display: grid;
+    gap: 0.9rem;
+    grid-template-columns: minmax(13rem, 0.9fr) minmax(16rem, 1.4fr);
+    padding: 0.85rem 1rem;
+}
+
+.qm-accuracy-row:last-child {
+    border-bottom: 0;
+}
+
+.qm-accuracy-match {
+    min-width: 0;
+}
+
+.qm-accuracy-match strong {
+    color: var(--qm-navy);
+    display: block;
+    font-size: 0.98rem;
+    font-weight: 900;
+    line-height: 1.15;
+}
+
+.qm-accuracy-match span {
+    color: var(--qm-muted);
+    display: block;
+    font-size: 0.76rem;
+    font-weight: 740;
+    line-height: 1.2;
+    margin-top: 0.22rem;
+}
+
+.qm-accuracy-bars {
+    display: grid;
+    gap: 0.42rem;
+    min-width: 0;
+}
+
+.qm-accuracy-bar-line {
+    align-items: center;
+    display: grid;
+    gap: 0.55rem;
+    grid-template-columns: 5rem minmax(0, 1fr) 2.2rem;
+}
+
+.qm-accuracy-bar-line span {
+    color: var(--qm-muted);
+    font-size: 0.72rem;
+    font-weight: 820;
+}
+
+.qm-accuracy-bar-line strong {
+    color: var(--qm-navy);
+    font-size: 0.9rem;
+    font-weight: 930;
+    text-align: right;
+}
+
+.qm-accuracy-track {
+    background: rgba(15, 35, 56, 0.08);
+    border-radius: 999px;
+    height: 0.62rem;
+    overflow: hidden;
+}
+
+.qm-accuracy-fill {
+    border-radius: inherit;
+    height: 100%;
+    min-width: 0.14rem;
+}
+
+.qm-accuracy-fill-result {
+    background: linear-gradient(90deg, var(--qm-green-2), var(--qm-green));
+}
+
+.qm-accuracy-fill-exact {
+    background: linear-gradient(90deg, var(--qm-gold), #f0c96a);
 }
 
 .qm-entry-card {
@@ -1061,6 +1158,30 @@ hr {
         font-size: 0.76rem;
         margin-top: 0;
         order: 1;
+    }
+
+    .qm-status-panel-wrap strong {
+        text-align: right;
+        white-space: normal;
+    }
+
+    .qm-accuracy-row {
+        gap: 0.55rem;
+        grid-template-columns: 1fr;
+        padding: 0.72rem;
+    }
+
+    .qm-accuracy-match strong {
+        font-size: 0.92rem;
+    }
+
+    .qm-accuracy-bar-line {
+        gap: 0.42rem;
+        grid-template-columns: 4.4rem minmax(0, 1fr) 1.8rem;
+    }
+
+    .qm-accuracy-bar-line span {
+        font-size: 0.68rem;
     }
 
     .qm-entry-review-row {
