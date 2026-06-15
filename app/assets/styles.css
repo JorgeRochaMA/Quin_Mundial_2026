@@ -771,6 +771,16 @@ div[data-testid="stDataFrame"] [role="gridcell"] {
     background: linear-gradient(90deg, var(--qm-gold), #f0c96a);
 }
 
+.qm-accuracy-item-panel {
+    margin-bottom: 0.4rem;
+    max-height: none;
+    overflow: hidden;
+}
+
+.qm-accuracy-item-panel .qm-accuracy-row {
+    border-bottom: 0;
+}
+
 .qm-entry-card {
     background: var(--qm-panel-strong);
     border: 1px solid rgba(220, 229, 236, 0.95);
