@@ -241,6 +241,7 @@ def _build_accuracy_radiography(
                 "match_id": match_id,
                 "Fecha": _short_date(match.get("match_date")),
                 "Partido": f"{home_team} vs {away_team}",
+                "Partido con marcador": f"{home_team} {home_score} vs {away_score} {away_team}",
                 "Marcador oficial": f"{home_score} - {away_score}",
                 "Aciertos resultado": result_hits,
                 "Marcadores exactos": exact_hits,
@@ -371,8 +372,8 @@ def _render_accuracy_match_card(row: pd.Series) -> None:
             <section class="qm-accuracy-panel qm-accuracy-item-panel">
                 <div class="qm-accuracy-row">
                     <div class="qm-accuracy-match">
-                        <strong>{escape(clean_text(row.get("Partido")) or "Partido")}</strong>
-                        <span>{escape(clean_text(row.get("Fecha")) or "-")} · Marcador {escape(clean_text(row.get("Marcador oficial")) or "-")} · {total_predictions} predicciones</span>
+                        <strong>{escape(clean_text(row.get("Partido con marcador")) or "Partido")}</strong>
+                        <span>{escape(clean_text(row.get("Fecha")) or "-")}</span>
                     </div>
                     <div class="qm-accuracy-bars">
                         <div class="qm-accuracy-bar-line">
